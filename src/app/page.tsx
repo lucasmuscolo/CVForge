@@ -81,7 +81,7 @@ const defaultCvData: CvData = {
 
 export default function CVForgePage() {
   const { currentUser, loading: authLoading } = useAuth(); // Get user and loading state
-  const { t } = useTranslation(); // Get translation function
+  const { t, locale } = useTranslation(); // Get translation function and current locale
   const router = useRouter();
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
   const [isLoaded, setIsLoaded] = useState(false); // Tracks if data processing for current auth state is complete
@@ -257,7 +257,7 @@ export default function CVForgePage() {
 
       setEnhancingState(prev => ({ ...prev, [key]: true }));
       try {
-         const result = await enhanceResumeLanguage({ sectionText: currentText });
+         const result = await enhanceResumeLanguage({ sectionText: currentText, language: locale }); // Pass current locale
          if (result?.enhancedText) {
            form.setValue(fieldName as any, result.enhancedText, { shouldValidate: true, shouldDirty: true });
            toast({ title: t('aiEnhance.success'), description: t('aiEnhance.successDesc') });
@@ -274,7 +274,7 @@ export default function CVForgePage() {
      } finally {
        setEnhancingState(prev => ({ ...prev, [key]: false }));
      }
-   }, [form, toast, t]); 
+   }, [form, toast, t, locale]); // Added locale to dependencies
 
 
   const enhancePersonalInfo = useCallback(
@@ -400,3 +400,4 @@ export default function CVForgePage() {
 }
 
   
+

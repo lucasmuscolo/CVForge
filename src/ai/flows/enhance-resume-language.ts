@@ -15,6 +15,7 @@ const EnhanceResumeLanguageInputSchema = z.object({
   sectionText: z
     .string()
     .describe('The text from the resume section that needs to be enhanced.'),
+  language: z.enum(['en', 'es']).describe('The language for the response (English or Spanish).'),
 });
 export type EnhanceResumeLanguageInput = z.infer<typeof EnhanceResumeLanguageInputSchema>;
 
@@ -35,11 +36,13 @@ const prompt = ai.definePrompt({
   output: {schema: EnhanceResumeLanguageOutputSchema},
   prompt: `You are an AI assistant specialized in enhancing resume language for professionalism and impact.
 
-  Please review the following text from a resume section and suggest improvements to the language, focusing on rephrasing bullet points and summary statements to be more compelling and professional. Provide the enhanced text as output.
+  Please review the following text from a resume section and suggest improvements to the language, focusing on rephrasing bullet points and summary statements to be more compelling and professional.
 
-  Original Text: {{{sectionText}}}
+  Respond in {{language}}.
 
-  Enhanced Text:`, // Ensure that the prompt ends with "Enhanced Text:" so that the LLM provides the enhanced text directly
+  Original Text (in any language, but your response must be in {{language}}): {{{sectionText}}}
+
+  Enhanced Text (in {{language}}):`,
 });
 
 const enhanceResumeLanguageFlow = ai.defineFlow(
