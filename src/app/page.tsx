@@ -83,8 +83,9 @@ export default function CVForgePage() {
 
    // Load data from local storage on initial mount
   useEffect(() => {
+    // Use try-catch for window access to avoid SSR errors
     try {
-        const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+        const savedData = window.localStorage.getItem(LOCAL_STORAGE_KEY);
         if (savedData) {
             const parsedData = JSON.parse(savedData);
             // Basic validation to ensure structure matches before setting
@@ -105,7 +106,7 @@ export default function CVForgePage() {
                 form.reset(validatedData); // Reset form with loaded data
             } else {
                 // Saved data structure is invalid, use default
-                 localStorage.removeItem(LOCAL_STORAGE_KEY); // Clean up invalid data
+                 window.localStorage.removeItem(LOCAL_STORAGE_KEY); // Clean up invalid data
                  form.reset(defaultCvData);
             }
         } else {
@@ -114,7 +115,9 @@ export default function CVForgePage() {
     } catch (error) {
       console.error("Failed to load or parse CV data from local storage:", error);
       // Reset to default if error occurs
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
+      if (typeof window !== 'undefined') {
+         window.localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
       setCvData(defaultCvData);
       form.reset(defaultCvData);
     }
@@ -124,7 +127,7 @@ export default function CVForgePage() {
 
    // Subscribe to form changes and update state / save to local storage
   useEffect(() => {
-    if (!isLoaded) return; // Don't save initial default state before loading
+    if (!isLoaded || typeof window === 'undefined') return; // Don't save initial default state before loading or on server
 
     const subscription = form.watch((value) => {
        // Ensure value is not undefined and has the expected structure
@@ -138,7 +141,7 @@ export default function CVForgePage() {
             };
             setCvData(dataToSave); // Update the state driving the preview
             try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+                window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
             } catch (error) {
                 console.error("Failed to save CV data to local storage:", error);
                  toast({
@@ -249,6 +252,30 @@ export default function CVForgePage() {
      [isEnhancing]
    );
 
+    // --- Toolbar Handlers ---
+   const handlePreview = useCallback(() => {
+     // Simple browser print functionality for preview
+     if (typeof window !== 'undefined') {
+       window.print();
+     }
+   }, []);
+
+   const handleChangeColor = useCallback(() => {
+     toast({
+       title: "Change Colors",
+       description: "Theme customization is coming soon!",
+     });
+     // Placeholder for future theme switching logic
+   }, [toast]);
+
+   const handleChangeLanguage = useCallback(() => {
+     toast({
+       title: "Change Language",
+       description: "Multi-language support is coming soon!",
+     });
+     // Placeholder for future i18n logic
+   }, [toast]);
+
    // Memoize components to prevent unnecessary re-renders
    const inputSection = useMemo(() => (
        <div className="space-y-6">
@@ -267,8 +294,8 @@ export default function CVForgePage() {
      ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience]); // Include AI handlers in dependencies
 
    const previewSection = useMemo(() => (
-       <div className="sticky top-6">
-           <h2 className="text-xl font-semibold mb-4 text-primary">Live Preview</h2>
+       <div className="sticky top-6 print:sticky-auto print:top-auto"> {/* Remove sticky on print */}
+           <h2 className="text-xl font-semibold mb-4 text-primary print:hidden">Live Preview</h2> {/* Hide header on print */}
            {/* Pass the cvData state which is updated by form.watch */}
            <CVPreview data={cvData} />
        </div>
@@ -284,6 +311,9 @@ export default function CVForgePage() {
       <CVForgeLayout
         inputSection={inputSection}
         previewSection={previewSection}
+        onPreview={handlePreview}
+        onChangeColor={handleChangeColor}
+        onChangeLanguage={handleChangeLanguage}
       />
       <Toaster />
     </>

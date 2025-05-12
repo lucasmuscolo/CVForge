@@ -91,5 +91,81 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    /* Ensure background color covers print area */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
+}
+
+/* Print-specific styles */
+@media print {
+  body {
+    /* Remove default margins */
+    margin: 0;
+    padding: 0;
+    /* Use a standard font size */
+    font-size: 10pt; /* Adjust as needed */
+    /* Ensure background prints */
+    background-color: white !important; /* Force white background for printing */
+    color: black !important; /* Force black text */
+  }
+
+  /* Hide elements not meant for printing */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Ensure preview takes full width/height */
+  .print\:w-full { width: 100% !important; }
+  .print\:h-auto { height: auto !important; }
+  .print\:p-0 { padding: 0 !important; }
+  .print\:m-0 { margin: 0 !important; }
+  .print\:shadow-none { box-shadow: none !important; }
+  .print\:overflow-visible { overflow: visible !important; }
+  .print\:sticky-auto { position: static !important; }
+  .print\:top-auto { top: auto !important; }
+
+
+  /* Adjust CVPreview specifically if needed */
+  /* Example: Remove border/shadow from the preview card itself */
+  #cv-preview-card { /* Add this ID to the CVPreview root div if needed */
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important; /* Reset padding if necessary */
+  }
+
+  /* Prevent page breaks inside critical sections if possible */
+  section, .break-inside-avoid {
+      break-inside: avoid;
+  }
+
+  /* Reset theme variables to sensible print defaults */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 80%;
+    --accent-foreground: 0 0% 0%;
+    --border: 0 0% 80%;
+  }
+
+   /* Ensure link colors are printable */
+   a {
+       color: #0000EE !important; /* Standard blue link color */
+       text-decoration: underline !important;
+   }
+
+   /* Ensure badges have printable contrast */
+    .print\:badge-print {
+        background-color: #E0E0E0 !important; /* Light gray */
+        color: black !important;
+        border: 1px solid #BDBDBD !important; /* Slightly darker border */
+    }
 }
