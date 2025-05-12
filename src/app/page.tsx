@@ -1,3 +1,4 @@
+// src/app/page.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -252,30 +253,6 @@ export default function CVForgePage() {
      [isEnhancing]
    );
 
-    // --- Toolbar Handlers ---
-   const handlePreview = useCallback(() => {
-     // Simple browser print functionality for preview
-     if (typeof window !== 'undefined') {
-       window.print();
-     }
-   }, []);
-
-   const handleChangeColor = useCallback(() => {
-     toast({
-       title: "Change Colors",
-       description: "Theme customization is coming soon!",
-     });
-     // Placeholder for future theme switching logic
-   }, [toast]);
-
-   const handleChangeLanguage = useCallback(() => {
-     toast({
-       title: "Change Language",
-       description: "Multi-language support is coming soon!",
-     });
-     // Placeholder for future i18n logic
-   }, [toast]);
-
    // Memoize components to prevent unnecessary re-renders
    const inputSection = useMemo(() => (
        <div className="space-y-6">
@@ -311,9 +288,7 @@ export default function CVForgePage() {
       <CVForgeLayout
         inputSection={inputSection}
         previewSection={previewSection}
-        onPreview={handlePreview}
-        onChangeColor={handleChangeColor}
-        onChangeLanguage={handleChangeLanguage}
+        // Removed toolbar props
       />
       <Toaster />
     </>
