@@ -1,7 +1,6 @@
 import type React from 'react';
 import Image from 'next/image'; // Import next/image
-import Link from 'next/link'; // Import Link for navigation
-import { Mail, Phone, Linkedin, Github, Link as LinkIcon, UserCircle, ArrowRight } from 'lucide-react'; // Added UserCircle, ArrowRight
+import { Mail, Phone, Linkedin, Github, Link as LinkIcon, UserCircle, ArrowRight, Loader2 } from 'lucide-react'; // Added UserCircle, ArrowRight, Loader2
 import type { CvData } from './types';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge'; // Import Badge
@@ -11,7 +10,9 @@ import { cn } from '@/lib/utils'; // Import cn for conditional classes
 
 interface CVPreviewProps {
   data: CvData;
-  showFinalButton?: boolean; // Added optional prop
+  showFinalButton?: boolean; // Optional prop to show/hide the button
+  onViewFinalClick?: () => Promise<void>; // Handler for the button click
+  isSaving?: boolean; // State for showing loading indicator
 }
 
 // Helper to format responsibilities (basic attempt to handle bullet points)
@@ -33,7 +34,7 @@ const formatResponsibilities = (text: string | undefined | null): React.ReactNod
 };
 
 
-export function CVPreview({ data, showFinalButton = true }: CVPreviewProps) { // Default showFinalButton to true
+export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSaving = false }: CVPreviewProps) {
   const { personalInfo, experience, education, skills } = data; // Destructure skills
 
   // Ensure personalInfo exists, providing default empty values if not
@@ -183,14 +184,19 @@ export function CVPreview({ data, showFinalButton = true }: CVPreviewProps) { //
        {/* View Final CV Button - Conditionally Rendered */}
        {showFinalButton && (
          <div className="mt-8 text-center print:hidden">
-           <Link href="/cv/final" passHref legacyBehavior>
-             <Button asChild variant="default" size="lg">
-               <a>
-                 View Final CV
-                 <ArrowRight className="ml-2 h-4 w-4" />
-               </a>
+            <Button
+                onClick={onViewFinalClick}
+                variant="default"
+                size="lg"
+                disabled={isSaving} // Disable button while saving
+            >
+                {isSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                )}
+                {isSaving ? 'Saving...' : 'View Final CV'}
              </Button>
-           </Link>
          </div>
        )}
     </div>

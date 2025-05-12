@@ -81,7 +81,7 @@ export default function CVForgePage() {
   const router = useRouter();
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
   const [isLoaded, setIsLoaded] = useState(false); // Tracks if Firestore data has been loaded
-  const [isSaving, setIsSaving] = useState(false); // Tracks saving state
+  const [isSaving, setIsSaving] = useState(false); // Tracks saving state for navigation
   const [enhancingState, setEnhancingState] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
@@ -89,7 +89,7 @@ export default function CVForgePage() {
   const form = useForm<CvData>({
     resolver: zodResolver(cvDataSchema),
     defaultValues: defaultCvData,
-    mode: 'onChange',
+    mode: 'onChange', // Keep onChange for live preview updates
   });
 
   // Redirect unauthenticated users
@@ -141,46 +141,26 @@ export default function CVForgePage() {
   }, [currentUser, isLoaded, form, toast, authLoading]); // Add authLoading
 
 
-   // Subscribe to form changes and save to Firestore
-  useEffect(() => {
-     // Only save if data is loaded, there's a user, and auth is not loading
-     if (!isLoaded || !currentUser || authLoading) return;
+   // Update preview state on form changes, but don't save automatically
+   useEffect(() => {
+     if (!isLoaded) return; // Only update preview if data is loaded
 
      const subscription = form.watch((value) => {
        const currentData = value as Partial<CvData>;
+        // Basic check to ensure structure is somewhat valid before updating preview state
        if (currentData && currentData.personalInfo && currentData.experience && currentData.education) {
-         const dataToSave: CvData = {
+         const dataForPreview: CvData = {
            personalInfo: { ...defaultCvData.personalInfo, ...currentData.personalInfo },
            experience: currentData.experience.map(exp => ({ ...exp })),
            education: currentData.education.map(edu => ({ ...edu })),
            skills: Array.isArray(currentData.skills) ? currentData.skills : [],
          };
-
-         setCvData(dataToSave); // Update the state driving the preview
-
-         // Debounce saving logic if needed, or save directly
-         setIsSaving(true); // Indicate saving start
-         saveCvData(currentUser.uid, dataToSave)
-           .then(() => {
-             // Optional: Add a subtle saving indicator or toast
-             // console.log("CV data saved to Firestore.");
-           })
-           .catch(error => {
-             console.error("Failed to save CV data to Firestore:", error);
-             toast({
-               title: "Error Saving Data",
-               description: "Could not save changes to the server.",
-               variant: "destructive",
-             });
-           })
-           .finally(() => {
-               // Use a small timeout to avoid flickering saving state on rapid changes
-               setTimeout(() => setIsSaving(false), 300);
-           });
+         setCvData(dataForPreview); // Update the state driving the preview
        }
      });
      return () => subscription.unsubscribe();
-  }, [form, isLoaded, currentUser, toast, authLoading]); // Add authLoading
+   }, [form, isLoaded]); // Only depend on form and isLoaded
+
 
   // --- Logout Handler ---
   const handleLogout = async () => {
@@ -195,6 +175,49 @@ export default function CVForgePage() {
         description: 'An error occurred during logout.',
         variant: 'destructive',
       });
+    }
+  };
+
+  // --- Save and Navigate Handler ---
+  const handleSaveAndNavigate = async () => {
+    if (!currentUser) {
+        toast({ title: "Not Logged In", description: "Please log in to save your CV.", variant: "destructive" });
+        return;
+    }
+
+    setIsSaving(true); // Indicate saving start
+    try {
+        // Trigger validation before saving (optional but recommended)
+        const isValid = await form.trigger();
+        if (!isValid) {
+             toast({ title: "Validation Error", description: "Please check the form for errors.", variant: "destructive" });
+             setIsSaving(false);
+             return;
+        }
+
+      const currentFormData = form.getValues(); // Get current data directly from form state
+       const dataToSave: CvData = {
+         personalInfo: { ...defaultCvData.personalInfo, ...currentFormData.personalInfo },
+         experience: currentFormData.experience.map(exp => ({ ...exp })),
+         education: currentFormData.education.map(edu => ({ ...edu })),
+         skills: Array.isArray(currentFormData.skills) ? currentFormData.skills : [],
+       };
+
+      await saveCvData(currentUser.uid, dataToSave);
+      toast({ title: "CV Saved Successfully", description: "Navigating to final preview..." });
+      router.push('/cv/final'); // Navigate after successful save
+
+    } catch (error) {
+      console.error("Failed to save CV data to Firestore:", error);
+      toast({
+        title: "Error Saving Data",
+        description: "Could not save changes to the server. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+        // Use a small timeout to allow navigation before resetting saving state if needed,
+        // or reset immediately if navigation handles visual transition.
+        setIsSaving(false); // Reset saving state
     }
   };
 
@@ -299,7 +322,7 @@ export default function CVForgePage() {
                  </Button>
             )}
          </div>
-         <p className="text-muted-foreground">Build and refine your professional CV. {isSaving ? <span className="text-xs italic">(Saving...)</span> : <span className="text-xs italic">(Auto-saved)</span>}</p>
+         <p className="text-muted-foreground">Build and refine your professional CV.</p> {/* Removed saving indicator */}
          <PersonalInfoForm
              form={form as UseFormReturn<any>}
             enhanceText={enhancePersonalInfo}
@@ -309,14 +332,20 @@ export default function CVForgePage() {
          <EducationForm form={form} />
          <SkillsForm form={form} />
        </div>
-     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser, isSaving]); // Added currentUser and isSaving
+     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser]); // Removed isSaving dependency
 
    const previewSection = useMemo(() => (
        <div className="md:sticky md:top-6 print:static print:top-auto">
            <h2 className="text-xl font-semibold mb-4 text-primary print:hidden">Live Preview</h2>
-           <CVPreview data={cvData} />
+           <CVPreview
+             data={cvData}
+             onViewFinalClick={handleSaveAndNavigate} // Pass the save and navigate handler
+             isSaving={isSaving} // Pass saving state
+             showFinalButton={true} // Ensure button is shown
+           />
        </div>
-   ), [cvData]);
+   ), [cvData, isSaving]); // Pass cvData and isSaving
+
 
     // Display loading indicator while auth or initial data load is happening
    if (authLoading || (!isLoaded && currentUser)) {
