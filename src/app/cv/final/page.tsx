@@ -100,7 +100,8 @@ export default function FinalCVPage() {
         {/* Render the CV Preview component */}
         {/* Ensure the preview itself doesn't have extra padding/margins for printing */}
         <div className="print:p-0 print:m-0">
-            <CVPreview data={cvData} />
+            {/* Pass showFinalButton={false} to hide the button */}
+            <CVPreview data={cvData} showFinalButton={false} />
         </div>
       </div>
     </div>

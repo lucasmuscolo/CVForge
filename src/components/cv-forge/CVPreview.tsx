@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'; // Import cn for conditional classes
 
 interface CVPreviewProps {
   data: CvData;
+  showFinalButton?: boolean; // Added optional prop
 }
 
 // Helper to format responsibilities (basic attempt to handle bullet points)
@@ -32,7 +33,7 @@ const formatResponsibilities = (text: string | undefined | null): React.ReactNod
 };
 
 
-export function CVPreview({ data }: CVPreviewProps) {
+export function CVPreview({ data, showFinalButton = true }: CVPreviewProps) { // Default showFinalButton to true
   const { personalInfo, experience, education, skills } = data; // Destructure skills
 
   // Ensure personalInfo exists, providing default empty values if not
@@ -179,17 +180,19 @@ export function CVPreview({ data }: CVPreviewProps) {
           )}
        </div> {/* End content container */}
 
-       {/* View Final CV Button */}
-        <div className="mt-8 text-center print:hidden">
-          <Link href="/cv/final" passHref legacyBehavior>
-            <Button asChild variant="default" size="lg">
-              <a>
-                View Final CV
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
-          </Link>
-        </div>
+       {/* View Final CV Button - Conditionally Rendered */}
+       {showFinalButton && (
+         <div className="mt-8 text-center print:hidden">
+           <Link href="/cv/final" passHref legacyBehavior>
+             <Button asChild variant="default" size="lg">
+               <a>
+                 View Final CV
+                 <ArrowRight className="ml-2 h-4 w-4" />
+               </a>
+             </Button>
+           </Link>
+         </div>
+       )}
     </div>
   );
 }
