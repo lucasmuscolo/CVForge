@@ -124,8 +124,8 @@ export default function FinalCVPage() {
     }
 
   return (
-    <div className="bg-secondary min-h-screen p-4 md:p-8">
-      <div className="max-w-4xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
+    <div className="bg-secondary min-h-screen p-4 md:p-8 print:bg-transparent print:p-0">
+      <div className="max-w-4xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden print:shadow-none print:rounded-none print:border-none print:bg-transparent">
          <div className="p-4 flex justify-between items-center border-b print:hidden">
             <Button onClick={handleBack} variant="outline" size="icon">
                <ArrowLeft className="h-4 w-4" />
@@ -136,11 +136,11 @@ export default function FinalCVPage() {
                Print / Save as PDF
             </Button>
          </div>
-        <div className="print:p-0 print:m-0">
+        {/* Wrap CVPreview in a div with specific ID for print styling */}
+        <div id="cv-preview-container" className="print:p-0 print:m-0">
             <CVPreview data={cvData} showFinalButton={false} />
         </div>
       </div>
     </div>
   );
 }
-

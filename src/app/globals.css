@@ -115,7 +115,29 @@ body {
     display: none !important;
   }
 
-  /* Ensure preview takes full width/height */
+  /* Ensure preview container takes full width/height and has padding */
+  #cv-preview-container { /* Target the container div in final page */
+      padding: 1.5cm !important; /* Add padding for margins */
+      width: 100% !important;
+      height: auto !important;
+      box-shadow: none !important;
+      border: none !important;
+      overflow: visible !important;
+      background-color: white !important; /* Ensure container background is white */
+      margin: 0 !important;
+  }
+
+   /* Style the actual CV preview card within the padded container */
+  #cv-preview-card { /* Target the CVPreview root div */
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important; /* Remove card padding, rely on container padding */
+      margin: 0 !important;
+      width: 100% !important;
+      background-color: white !important; /* Ensure card background is white */
+  }
+
+   /* Apply Tailwind print utilities if still needed elsewhere */
   .print\:w-full { width: 100% !important; }
   .print\:h-auto { height: auto !important; }
   .print\:p-0 { padding: 0 !important; }
@@ -125,14 +147,6 @@ body {
   .print\:sticky-auto { position: static !important; }
   .print\:top-auto { top: auto !important; }
 
-
-  /* Adjust CVPreview specifically if needed */
-  /* Example: Remove border/shadow from the preview card itself */
-  #cv-preview-card { /* Add this ID to the CVPreview root div if needed */
-      border: none !important;
-      box-shadow: none !important;
-      padding: 0 !important; /* Reset padding if necessary */
-  }
 
   /* Prevent page breaks inside critical sections if possible */
   section, .break-inside-avoid {
