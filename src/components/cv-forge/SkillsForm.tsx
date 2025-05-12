@@ -1,3 +1,4 @@
+
 // src/components/cv-forge/SkillsForm.tsx
 'use client';
 
@@ -10,12 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { X, PlusCircle } from 'lucide-react';
 import type { CvData } from './types';
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 interface SkillsFormProps {
   form: UseFormReturn<CvData>;
 }
 
 export function SkillsForm({ form }: SkillsFormProps) {
+  const { t } = useTranslation(); // Get translation function
   const [currentSkill, setCurrentSkill] = useState('');
   // Watch the skills array from the form state to display them
   const skills = form.watch('skills') || [];
@@ -47,26 +50,26 @@ export function SkillsForm({ form }: SkillsFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Skills</CardTitle>
+        <CardTitle>{t('skills.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <div className="space-y-4">
             {/* Skill Input */}
             <FormItem>
-              <FormLabel>Add Skill</FormLabel>
+              <FormLabel>{t('skills.addSkillLabel')}</FormLabel>
               <div className="flex items-center gap-2">
                 <FormControl>
                   <Input
-                    placeholder="e.g., JavaScript, Python, Project Management"
+                    placeholder={t('skills.addSkillPlaceholder')}
                     value={currentSkill}
                     onChange={(e) => setCurrentSkill(e.target.value)}
                     onKeyDown={handleKeyDown}
                   />
                 </FormControl>
-                <Button type="button" size="icon" onClick={handleAddSkill}>
+                <Button type="button" size="icon" onClick={handleAddSkill} aria-label={t('skills.addSkillButton')}>
                   <PlusCircle className="h-4 w-4" />
-                   <span className="sr-only">Add Skill</span>
+                   <span className="sr-only">{t('skills.addSkillButton')}</span>
                 </Button>
               </div>
               {/* You might want a FormMessage here if you add specific validation for the input field */}
@@ -74,7 +77,7 @@ export function SkillsForm({ form }: SkillsFormProps) {
 
             {/* Display Skills */}
             <div className="space-y-2">
-              <FormLabel>Your Skills</FormLabel>
+              <FormLabel>{t('skills.yourSkillsLabel')}</FormLabel>
               {skills.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {skills.map((skill) => (
@@ -84,7 +87,7 @@ export function SkillsForm({ form }: SkillsFormProps) {
                         type="button"
                         onClick={() => handleRemoveSkill(skill)}
                         className="rounded-full hover:bg-muted-foreground/20 focus:outline-none focus:ring-1 focus:ring-ring"
-                        aria-label={`Remove ${skill}`}
+                        aria-label={t('skills.removeSkill', { skill: skill })}
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -92,7 +95,7 @@ export function SkillsForm({ form }: SkillsFormProps) {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No skills added yet.</p>
+                <p className="text-sm text-muted-foreground">{t('skills.noSkills')}</p>
               )}
                {/* General FormMessage for the 'skills' array if needed (e.g., minimum number of skills) */}
                 <FormField
@@ -107,3 +110,5 @@ export function SkillsForm({ form }: SkillsFormProps) {
     </Card>
   );
 }
+
+  

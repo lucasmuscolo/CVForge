@@ -1,3 +1,4 @@
+
 // src/app/page.tsx
 'use client';
 
@@ -25,9 +26,11 @@ import { getCvData, saveCvData } from '@/lib/firebase/firestore'; // Import Fire
 import { Button } from '@/components/ui/button'; // Import Button
 import { LogOut } from 'lucide-react'; // Import LogOut icon
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'; // Import LanguageSwitcher
 
 
-// Zod Schemas remain the same
+// Zod Schemas remain the same (no translation needed for validation logic)
 const personalInfoSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
   title: z.string().min(1, 'Professional title is required'),
@@ -78,6 +81,7 @@ const defaultCvData: CvData = {
 
 export default function CVForgePage() {
   const { currentUser, loading: authLoading } = useAuth(); // Get user and loading state
+  const { t } = useTranslation(); // Get translation function
   const router = useRouter();
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
   const [isLoaded, setIsLoaded] = useState(false); // Tracks if Firestore data has been loaded
@@ -121,8 +125,8 @@ export default function CVForgePage() {
             } catch (error) {
                 console.error("Failed to load CV data from Firestore:", error);
                 toast({
-                    title: "Error Loading Data",
-                    description: "Could not load your CV data from the server.",
+                    title: t('cvForge.loadingData'),
+                    description: t('cvForge.loadingDataDesc'),
                     variant: "destructive",
                 });
                  // Reset to default if error occurs during loading
@@ -138,7 +142,7 @@ export default function CVForgePage() {
          form.reset(defaultCvData);
          setIsLoaded(true); // Mark as loaded even if no user
      }
-  }, [currentUser, isLoaded, form, toast, authLoading]); // Add authLoading
+  }, [currentUser, isLoaded, form, toast, authLoading, t]); // Add t to dependency array
 
 
    // Update preview state on form changes, but don't save automatically
@@ -166,13 +170,13 @@ export default function CVForgePage() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+      toast({ title: t('loginPage.loggedOut'), description: t('loginPage.loggedOutDesc') });
       // AuthProvider will handle redirecting to login via the useEffect hook
     } catch (error) {
       console.error('Logout failed:', error);
       toast({
-        title: 'Logout Failed',
-        description: 'An error occurred during logout.',
+        title: t('loginPage.logoutFailed'),
+        description: t('loginPage.logoutFailedDesc'),
         variant: 'destructive',
       });
     }
@@ -181,7 +185,7 @@ export default function CVForgePage() {
   // --- Save and Navigate Handler ---
   const handleSaveAndNavigate = async () => {
     if (!currentUser) {
-        toast({ title: "Not Logged In", description: "Please log in to save your CV.", variant: "destructive" });
+        toast({ title: t('cvForge.notLoggedIn'), description: t('cvForge.notLoggedInDesc'), variant: "destructive" });
         return;
     }
 
@@ -190,7 +194,7 @@ export default function CVForgePage() {
         // Trigger validation before saving (optional but recommended)
         const isValid = await form.trigger();
         if (!isValid) {
-             toast({ title: "Validation Error", description: "Please check the form for errors.", variant: "destructive" });
+             toast({ title: t('cvForge.validationError'), description: t('cvForge.validationErrorDesc'), variant: "destructive" });
              setIsSaving(false);
              return;
         }
@@ -204,14 +208,14 @@ export default function CVForgePage() {
        };
 
       await saveCvData(currentUser.uid, dataToSave);
-      toast({ title: "CV Saved Successfully", description: "Navigating to final preview..." });
+      toast({ title: t('cvForge.cvSavedSuccess'), description: t('cvForge.cvSavedSuccessDesc') });
       router.push('/cv/final'); // Navigate after successful save
 
     } catch (error) {
       console.error("Failed to save CV data to Firestore:", error);
       toast({
-        title: "Error Saving Data",
-        description: "Could not save changes to the server. Please try again.",
+        title: t('cvForge.errorSaving'),
+        description: t('cvForge.errorSavingDesc'),
         variant: "destructive",
       });
     } finally {
@@ -222,7 +226,7 @@ export default function CVForgePage() {
   };
 
 
-  // --- AI Enhancement Logic (remains the same) ---
+  // --- AI Enhancement Logic (remains the same, toast messages updated) ---
    const getEnhancingKey = (
      section: 'personalInfo' | 'experience' | 'education' | 'skills',
      fieldName: string,
@@ -239,7 +243,7 @@ export default function CVForgePage() {
    ) => {
       const key = getEnhancingKey(section, fieldName, index);
       if (!currentText?.trim()) {
-         toast({ title: "Input Required", description: "Please enter some text to enhance.", variant: "destructive" });
+         toast({ title: t('aiEnhance.inputRequired'), description: t('aiEnhance.inputRequiredDesc'), variant: "destructive" });
          return;
        }
 
@@ -248,21 +252,21 @@ export default function CVForgePage() {
          const result = await enhanceResumeLanguage({ sectionText: currentText });
          if (result?.enhancedText) {
            form.setValue(fieldName as any, result.enhancedText, { shouldValidate: true, shouldDirty: true });
-           toast({ title: "Enhancement Successful", description: "Text has been updated." });
+           toast({ title: t('aiEnhance.success'), description: t('aiEnhance.successDesc') });
          } else {
            throw new Error("AI did not return enhanced text.");
          }
      } catch (error) {
        console.error("AI enhancement failed:", error);
        toast({
-         title: "AI Enhancement Failed",
-         description: "Could not enhance the text. Please try again later.",
+         title: t('aiEnhance.failed'),
+         description: t('aiEnhance.failedDesc'),
          variant: "destructive",
        });
      } finally {
        setEnhancingState(prev => ({ ...prev, [key]: false }));
      }
-   }, [form, toast]);
+   }, [form, toast, t]); // Add t to dependency array
 
 
   const enhancePersonalInfo = useCallback(
@@ -313,16 +317,19 @@ export default function CVForgePage() {
    // Memoize components
    const inputSection = useMemo(() => (
        <div className="space-y-6">
-         {/* Header with Logout Button */}
-         <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-primary">CVForge</h1>
-            {currentUser && (
-                 <Button onClick={handleLogout} variant="outline" size="sm">
-                     <LogOut className="mr-2 h-4 w-4" /> Logout
-                 </Button>
-            )}
+         {/* Header with Logout Button and Language Switcher */}
+         <div className="flex justify-between items-center gap-2">
+            <h1 className="text-2xl font-bold text-primary">{t('cvForge.title')}</h1>
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              {currentUser && (
+                   <Button onClick={handleLogout} variant="outline" size="sm">
+                       <LogOut className="mr-2 h-4 w-4" /> {t('cvForge.logout')}
+                   </Button>
+              )}
+             </div>
          </div>
-         <p className="text-muted-foreground">Build and refine your professional CV.</p> {/* Removed saving indicator */}
+         <p className="text-muted-foreground">{t('cvForge.description')}</p> {/* Removed saving indicator */}
          <PersonalInfoForm
              form={form as UseFormReturn<any>}
             enhanceText={enhancePersonalInfo}
@@ -332,11 +339,11 @@ export default function CVForgePage() {
          <EducationForm form={form} />
          <SkillsForm form={form} />
        </div>
-     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser]); // Removed isSaving dependency
+     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser, t, handleLogout]); // Added t and handleLogout dependencies
 
    const previewSection = useMemo(() => (
        <div className="md:sticky md:top-6 print:static print:top-auto">
-           <h2 className="text-xl font-semibold mb-4 text-primary print:hidden">Live Preview</h2>
+           <h2 className="text-xl font-semibold mb-4 text-primary print:hidden">{t('cvForge.livePreview')}</h2>
            <CVPreview
              data={cvData}
              onViewFinalClick={handleSaveAndNavigate} // Pass the save and navigate handler
@@ -344,7 +351,7 @@ export default function CVForgePage() {
              showFinalButton={true} // Ensure button is shown
            />
        </div>
-   ), [cvData, isSaving]); // Pass cvData and isSaving
+   ), [cvData, isSaving, t, handleSaveAndNavigate]); // Added t and handleSaveAndNavigate dependencies
 
 
     // Display loading indicator while auth or initial data load is happening
@@ -376,7 +383,7 @@ export default function CVForgePage() {
    if (!currentUser) {
         // This should ideally be handled by the redirect effect,
         // but can serve as a fallback or show a "Redirecting..." message.
-       return <div className="flex justify-center items-center min-h-screen">Redirecting to login...</div>;
+       return <div className="flex justify-center items-center min-h-screen">{t('cvForge.redirectingLogin')}</div>;
    }
 
 
@@ -390,3 +397,5 @@ export default function CVForgePage() {
     </>
   );
 }
+
+  

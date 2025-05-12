@@ -1,3 +1,5 @@
+
+// src/components/cv-forge/PersonalInfoForm.tsx
 'use client';
 
 import React from 'react';
@@ -13,14 +15,16 @@ import { AIButton } from './AIButton';
 import { useToast } from '@/hooks/use-toast';
 import { UserCircle, Upload, Replace } from 'lucide-react'; // Placeholder icon, Upload, Replace
 import { cn } from '@/lib/utils'; // Import cn
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 interface PersonalInfoFormProps {
-  form: UseFormReturn<PersonalInfo>; // Use PersonalInfo directly
+  form: UseFormReturn<any>; // Allow wider type for nested structure
   enhanceText: (fieldName: keyof Omit<PersonalInfo, 'photoDataUri'>, currentText: string) => Promise<void>; // Exclude photoDataUri
   isEnhancing: (fieldName: keyof Omit<PersonalInfo, 'photoDataUri'>) => boolean; // Exclude photoDataUri
 }
 
 export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInfoFormProps) {
+    const { t } = useTranslation(); // Get translation function
     const { toast } = useToast();
     const fileInputRef = React.useRef<HTMLInputElement>(null); // Ref for the hidden file input
 
@@ -29,8 +33,8 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
       if (file) {
         if (file.size > 5 * 1024 * 1024) { // Limit file size (e.g., 5MB)
             toast({
-                title: "File Too Large",
-                description: "Please select an image smaller than 5MB.",
+                title: t('personalInfo.fileTooLarge'),
+                description: t('personalInfo.fileTooLargeDesc'),
                 variant: "destructive",
             });
             event.target.value = ''; // Clear the input
@@ -43,11 +47,11 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
           if (typeof result === 'string') {
             field.onChange(result); // Use field.onChange provided by Controller
           } else {
-             toast({ title: "Error Reading File", description: "Could not read the selected image.", variant: "destructive" });
+             toast({ title: t('personalInfo.errorReadingFile'), description: t('personalInfo.errorReadingFileDesc'), variant: "destructive" });
           }
         };
          reader.onerror = () => {
-            toast({ title: "Error Reading File", description: "Could not read the selected image.", variant: "destructive" });
+            toast({ title: t('personalInfo.errorReadingFile'), description: t('personalInfo.errorReadingFileDesc'), variant: "destructive" });
          };
         reader.readAsDataURL(file);
       }
@@ -62,7 +66,7 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Personal Information</CardTitle>
+        <CardTitle>{t('personalInfo.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Use form instance directly, assuming it's correctly typed in parent */}
@@ -72,11 +76,10 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
             {/* Photo Upload Field */}
             <FormField
               control={form.control}
-              // Use the correct name matching the parent form structure
-              name="personalInfo.photoDataUri" // Adjust if parent form structure differs
+              name="personalInfo.photoDataUri" // Adjusted name
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Profile Photo (Optional)</FormLabel>
+                  <FormLabel>{t('personalInfo.photoLabel')}</FormLabel>
                   <div className="flex items-center gap-4">
                      {/* Image Preview */}
                      {field.value ? (
@@ -99,8 +102,6 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
                             ref={fileInputRef}
                             onChange={(e) => handlePhotoChange(e, field)}
                             className="hidden" // Hide the actual input
-                            // Omit field properties handled by the Controller
-                            // Pass other necessary props if needed
                             id="photo-upload-input" // Add id for label association
                           />
                      </FormControl>
@@ -113,11 +114,11 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
                       >
                          {field.value ? (
                            <>
-                             <Replace className="mr-2 h-4 w-4" /> Change Photo
+                             <Replace className="mr-2 h-4 w-4" /> {t('personalInfo.changePhoto')}
                            </>
                          ) : (
                            <>
-                             <Upload className="mr-2 h-4 w-4" /> Upload Photo
+                             <Upload className="mr-2 h-4 w-4" /> {t('personalInfo.uploadPhoto')}
                            </>
                          )}
                       </Button>
@@ -130,12 +131,12 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
             {/* Other Fields */}
             <FormField
               control={form.control}
-              name="personalInfo.name" // Adjust if parent form structure differs
+              name="personalInfo.name" // Adjusted name
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>{t('personalInfo.nameLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Jane Doe" {...field} />
+                    <Input placeholder={t('personalInfo.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -143,12 +144,12 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
             />
             <FormField
               control={form.control}
-              name="personalInfo.title" // Adjust if parent form structure differs
+              name="personalInfo.title" // Adjusted name
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Professional Title</FormLabel>
+                  <FormLabel>{t('personalInfo.titleLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Senior Software Engineer" {...field} />
+                    <Input placeholder={t('personalInfo.titlePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,12 +157,12 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
             />
             <FormField
               control={form.control}
-              name="personalInfo.phone" // Adjust if parent form structure differs
+              name="personalInfo.phone" // Adjusted name
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                  <FormLabel>{t('personalInfo.phoneLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="e.g., (123) 456-7890" {...field} />
+                    <Input type="tel" placeholder={t('personalInfo.phonePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,12 +170,12 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
             />
             <FormField
               control={form.control}
-              name="personalInfo.email" // Adjust if parent form structure differs
+              name="personalInfo.email" // Adjusted name
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address</FormLabel>
+                  <FormLabel>{t('personalInfo.emailLabel')}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="e.g., jane.doe@example.com" {...field} />
+                    <Input type="email" placeholder={t('personalInfo.emailPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -182,12 +183,12 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
             />
             <FormField
               control={form.control}
-              name="personalInfo.linkedin" // Adjust if parent form structure differs
+              name="personalInfo.linkedin" // Adjusted name
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>LinkedIn Profile URL</FormLabel>
+                  <FormLabel>{t('personalInfo.linkedinLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., linkedin.com/in/janedoe" {...field} />
+                    <Input placeholder={t('personalInfo.linkedinPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -195,12 +196,12 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
             />
             <FormField
               control={form.control}
-              name="personalInfo.github" // Adjust if parent form structure differs
+              name="personalInfo.github" // Adjusted name
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>GitHub Profile URL (Optional)</FormLabel>
+                  <FormLabel>{t('personalInfo.githubLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., github.com/janedoe" {...field} />
+                    <Input placeholder={t('personalInfo.githubPlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -208,12 +209,12 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
             />
             <FormField
               control={form.control}
-              name="personalInfo.website" // Adjust if parent form structure differs
+              name="personalInfo.website" // Adjusted name
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Personal Website/Portfolio (Optional)</FormLabel>
+                  <FormLabel>{t('personalInfo.websiteLabel')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., janedoe.dev" {...field} />
+                    <Input placeholder={t('personalInfo.websitePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -221,19 +222,19 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
             />
              <FormField
               control={form.control}
-              name="personalInfo.summary" // Adjust if parent form structure differs
+              name="personalInfo.summary" // Adjusted name
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Summary/Objective</FormLabel>
+                  <FormLabel>{t('personalInfo.summaryLabel')}</FormLabel>
                    <div className="relative">
                     <FormControl>
-                      <Textarea placeholder="Brief professional overview..." {...field} value={field.value ?? ''} rows={4} />
+                      <Textarea placeholder={t('personalInfo.summaryPlaceholder')} {...field} value={field.value ?? ''} rows={4} />
                     </FormControl>
                      <AIButton
                       onClick={() => enhanceText('summary', field.value ?? '')}
                       isLoading={isEnhancing('summary')}
                       className="absolute bottom-2 right-2"
-                      tooltipContent="Enhance summary with AI"
+                      tooltipContent={t('personalInfo.enhanceSummaryTooltip')}
                     />
                   </div>
                   <FormMessage />
@@ -246,3 +247,5 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
     </Card>
   );
 }
+
+  

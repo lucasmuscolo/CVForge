@@ -1,3 +1,4 @@
+
 import type React from 'react';
 import Image from 'next/image'; // Import next/image
 import { Mail, Phone, Linkedin, Github, Link as LinkIcon, UserCircle, ArrowRight, Loader2 } from 'lucide-react'; // Added UserCircle, ArrowRight, Loader2
@@ -6,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge'; // Import Badge
 import { Button } from '@/components/ui/button'; // Import Button
 import { cn } from '@/lib/utils'; // Import cn for conditional classes
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 
 interface CVPreviewProps {
@@ -35,6 +37,7 @@ const formatResponsibilities = (text: string | undefined | null): React.ReactNod
 
 
 export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSaving = false }: CVPreviewProps) {
+  const { t } = useTranslation(); // Get translation function
   const { personalInfo, experience, education, skills } = data; // Destructure skills
 
   // Ensure personalInfo exists, providing default empty values if not
@@ -52,7 +55,7 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
                 {safePersonalInfo.photoDataUri ? (
                   <Image
                     src={safePersonalInfo.photoDataUri}
-                    alt={`${safePersonalInfo.name || 'User'}'s profile photo`}
+                    alt={`${safePersonalInfo.name || t('cvPreview.yourName')}'s profile photo`}
                     width={100} // Increased size
                     height={100}
                     className="rounded-full object-cover border-2 border-border print:border-black" // Print border
@@ -65,8 +68,8 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
 
               {/* Text Details */}
               <div className="text-center sm:text-left flex-grow print:text-left">
-                <h1 className="text-2xl md:text-3xl font-bold mb-1">{safePersonalInfo.name || 'Your Name'}</h1>
-                <p className="text-lg text-primary mb-3 print:text-black">{safePersonalInfo.title || 'Your Professional Title'}</p>
+                <h1 className="text-2xl md:text-3xl font-bold mb-1">{safePersonalInfo.name || t('cvPreview.yourName')}</h1>
+                <p className="text-lg text-primary mb-3 print:text-black">{safePersonalInfo.title || t('cvPreview.yourTitle')}</p>
                 <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 text-sm text-muted-foreground print:justify-start print:text-black">
                   {safePersonalInfo.email && (
                     <a href={`mailto:${safePersonalInfo.email}`} className="flex items-center gap-1 hover:text-primary print:text-black print:hover:text-black">
@@ -83,19 +86,19 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
                   {safePersonalInfo.linkedin && (
                     <a href={safePersonalInfo.linkedin.startsWith('http') ? safePersonalInfo.linkedin : `https://${safePersonalInfo.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary print:text-black print:hover:text-black">
                       <Linkedin className="w-3 h-3" />
-                      <span>LinkedIn</span>
+                      <span>{t('cvPreview.linkedIn')}</span>
                     </a>
                   )}
                   {safePersonalInfo.github && (
                     <a href={safePersonalInfo.github.startsWith('http') ? safePersonalInfo.github : `https://${safePersonalInfo.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary print:text-black print:hover:text-black">
                       <Github className="w-3 h-3" />
-                      <span>GitHub</span>
+                      <span>{t('cvPreview.github')}</span>
                     </a>
                   )}
                   {safePersonalInfo.website && (
                     <a href={safePersonalInfo.website.startsWith('http') ? safePersonalInfo.website : `https://${safePersonalInfo.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-primary print:text-black print:hover:text-black">
                       <LinkIcon className="w-3 h-3" />
-                      <span>Website</span>
+                      <span>{t('cvPreview.website')}</span>
                     </a>
                   )}
                 </div>
@@ -106,7 +109,7 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           {/* Summary */}
           {safePersonalInfo.summary && (
             <section className="mb-6 break-inside-avoid"> {/* Added break-inside-avoid */}
-                <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">Summary</h2>
+                <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.summaryTitle')}</h2>
                 <p className="text-sm">{safePersonalInfo.summary}</p>
             </section>
           )}
@@ -114,7 +117,7 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           {/* Skills */}
           {safeSkills.length > 0 && (
             <section className="mb-6 break-inside-avoid"> {/* Added break-inside-avoid */}
-              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">Skills</h2>
+              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.skillsTitle')}</h2>
               <div className="flex flex-wrap gap-2">
                 {safeSkills.map((skill) => (
                   <Badge key={skill} variant="secondary" className="print:badge-print"> {/* Added print class */}
@@ -129,20 +132,20 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           {/* Experience */}
           {experience && experience.length > 0 && (
             <section className="mb-6">
-              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">Work Experience</h2>
+              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.experienceTitle')}</h2>
               <div className="space-y-4">
                 {experience.map((exp) => (
                   <div key={exp.id} className="break-inside-avoid"> {/* Added break-inside-avoid */}
                     <div className="flex justify-between items-start mb-1">
-                      <h3 className="text-md font-semibold">{exp.jobTitle || 'Job Title'}</h3>
+                      <h3 className="text-md font-semibold">{exp.jobTitle || t('cvPreview.jobTitle')}</h3>
                       <span className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">
-                        {exp.startDate || 'Start Date'} - {exp.endDate || 'End Date'}
+                        {exp.startDate || t('cvPreview.startDate')} - {exp.endDate || t('cvPreview.endDate')}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-start mb-1">
-                      <p className="text-sm font-medium">{exp.company || 'Company Name'}</p>
-                      <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{exp.location || 'Location'}</p>
+                      <p className="text-sm font-medium">{exp.company || t('cvPreview.companyName')}</p>
+                      <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{exp.location || t('cvPreview.location')}</p>
                     </div>
                     {formatResponsibilities(exp.responsibilities)}
                   </div>
@@ -154,19 +157,19 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           {/* Education */}
           {education && education.length > 0 && (
             <section>
-              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">Education</h2>
+              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.educationTitle')}</h2>
               <div className="space-y-4">
                 {education.map((edu) => (
                   <div key={edu.id} className="break-inside-avoid"> {/* Added break-inside-avoid */}
                     <div className="flex justify-between items-start mb-1">
-                        <h3 className="text-md font-semibold">{edu.degree || 'Degree/Certificate'}</h3>
+                        <h3 className="text-md font-semibold">{edu.degree || t('cvPreview.degree')}</h3>
                         <span className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">
-                          {edu.graduationDate || 'Graduation Date'}
+                          {edu.graduationDate || t('cvPreview.graduationDate')}
                         </span>
                       </div>
                     <div className="flex justify-between items-start mb-1">
-                      <p className="text-sm font-medium">{edu.institution || 'Institution Name'}</p>
-                        <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{edu.location || 'Location'}</p>
+                      <p className="text-sm font-medium">{edu.institution || t('cvPreview.institutionName')}</p>
+                        <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{edu.location || t('cvPreview.location')}</p>
                     </div>
                     {edu.details && <p className="text-sm italic text-muted-foreground print:text-black">{edu.details}</p>}
                   </div>
@@ -177,7 +180,7 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
 
           {/* Placeholder if empty */}
           {!safePersonalInfo.name && safeSkills.length === 0 && (!experience || experience.length === 0) && (!education || education.length === 0) && (
-              <p className="text-center text-muted-foreground mt-10 print:hidden">Start filling out the forms on the left to see your CV preview here.</p>
+              <p className="text-center text-muted-foreground mt-10 print:hidden">{t('cvPreview.placeholder')}</p>
           )}
        </div> {/* End content container */}
 
@@ -195,10 +198,12 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
                 ) : (
                     <ArrowRight className="mr-2 h-4 w-4" />
                 )}
-                {isSaving ? 'Saving...' : 'View Final CV'}
+                {isSaving ? t('cvForge.saving') : t('cvForge.saveAndNavigate')}
              </Button>
          </div>
        )}
     </div>
   );
 }
+
+  

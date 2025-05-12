@@ -1,3 +1,4 @@
+
 // src/app/(auth)/login/page.tsx
 'use client';
 
@@ -22,6 +23,9 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Chrome } from 'lucide-react'; // Import Chrome for Google icon
 import { Separator } from '@/components/ui/separator'; // Import Separator
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'; // Import LanguageSwitcher
+
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -47,6 +51,7 @@ export default function LoginPage() {
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false); // Loading state for Google Sign-In
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation(); // Get translation function
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -63,15 +68,15 @@ export default function LoginPage() {
     setIsLoadingLogin(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      toast({ title: 'Login Successful', description: 'Redirecting...' });
+      toast({ title: t('loginPage.loginSuccess'), description: t('loginPage.loginSuccessDesc') });
       router.push('/'); // Redirect to home page after successful login
     } catch (error: any) {
       console.error('Login failed:', error);
       // The catch block correctly handles errors like 'auth/invalid-credential'
       // by showing a toast message to the user.
       toast({
-        title: 'Login Failed',
-        description: error.message || 'Invalid credentials or user not found.', // Provide a more specific default message if needed
+        title: t('loginPage.loginFailed'),
+        description: error.message || t('loginPage.loginFailedDesc'), // Provide a more specific default message if needed
         variant: 'destructive',
       });
     } finally {
@@ -83,13 +88,13 @@ export default function LoginPage() {
      setIsLoadingSignup(true);
      try {
         await createUserWithEmailAndPassword(auth, values.email, values.password);
-        toast({ title: 'Signup Successful', description: 'Redirecting...' });
+        toast({ title: t('loginPage.signUpSuccess'), description: t('loginPage.signUpSuccessDesc') });
         router.push('/'); // Redirect to home page after successful signup
      } catch (error: any) {
         console.error('Signup failed:', error);
         toast({
-            title: 'Signup Failed',
-            description: error.message || 'An error occurred during signup.',
+            title: t('loginPage.signUpFailed'),
+            description: error.message || t('loginPage.signUpFailedDesc'),
             variant: 'destructive',
         });
      } finally {
@@ -103,21 +108,21 @@ export default function LoginPage() {
        const provider = new GoogleAuthProvider();
        try {
            await signInWithPopup(auth, provider);
-           toast({ title: 'Google Sign-In Successful', description: 'Redirecting...' });
+           toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
            router.push('/'); // Redirect to home page after successful sign-in
        } catch (error: any) {
            console.error('Google Sign-In failed:', error);
            // Handle specific errors like popup closed by user
            if (error.code === 'auth/popup-closed-by-user') {
                  toast({
-                    title: 'Sign-In Cancelled',
-                    description: 'You closed the Google Sign-In window.',
+                    title: t('loginPage.signInCancelled'),
+                    description: t('loginPage.signInCancelledDesc'),
                     variant: 'default', // Use default or warning variant
                  });
            } else {
                toast({
-                   title: 'Google Sign-In Failed',
-                   description: error.message || 'An error occurred during Google Sign-In.',
+                   title: t('loginPage.googleSignInFailed'),
+                   description: error.message || t('loginPage.googleSignInFailedDesc'),
                    variant: 'destructive',
                });
             }
@@ -128,19 +133,22 @@ export default function LoginPage() {
 
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-secondary p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-secondary p-4">
+      <div className="absolute top-4 right-4">
+          <LanguageSwitcher />
+      </div>
       <Tabs defaultValue="login" className="w-[400px]">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          <TabsTrigger value="login">{t('loginPage.login')}</TabsTrigger>
+          <TabsTrigger value="signup">{t('loginPage.signUp')}</TabsTrigger>
         </TabsList>
 
         {/* Login Tab */}
         <TabsContent value="login">
           <Card>
             <CardHeader>
-              <CardTitle>Login</CardTitle>
-              <CardDescription>Access your CVForge account.</CardDescription>
+              <CardTitle>{t('loginPage.loginTitle')}</CardTitle>
+              <CardDescription>{t('loginPage.loginDescription')}</CardDescription>
             </CardHeader>
             <Form {...loginForm}>
               <form onSubmit={loginForm.handleSubmit(handleLogin)}>
@@ -150,9 +158,9 @@ export default function LoginPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                           <Label htmlFor="login-email">Email</Label>
+                           <Label htmlFor="login-email">{t('loginPage.emailLabel')}</Label>
                            <FormControl>
-                             <Input id="login-email" type="email" placeholder="you@example.com" {...field} disabled={isLoadingLogin || isLoadingGoogle} />
+                             <Input id="login-email" type="email" placeholder={t('loginPage.emailPlaceholder')} {...field} disabled={isLoadingLogin || isLoadingGoogle} />
                            </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -163,7 +171,7 @@ export default function LoginPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                           <Label htmlFor="login-password">Password</Label>
+                           <Label htmlFor="login-password">{t('loginPage.passwordLabel')}</Label>
                             <FormControl>
                               <Input id="login-password" type="password" {...field} disabled={isLoadingLogin || isLoadingGoogle} />
                            </FormControl>
@@ -175,11 +183,11 @@ export default function LoginPage() {
                 <CardFooter className="flex-col space-y-4">
                    <Button type="submit" className="w-full" disabled={isLoadingLogin || isLoadingGoogle}>
                      {isLoadingLogin && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Login
+                     {t('loginPage.loginButton')}
                    </Button>
                    <div className="relative w-full">
                       <Separator />
-                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">OR</span>
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">{t('loginPage.or')}</span>
                     </div>
                    <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoadingLogin || isLoadingGoogle || isLoadingSignup}>
                      {isLoadingGoogle ? (
@@ -187,7 +195,7 @@ export default function LoginPage() {
                      ) : (
                         <Chrome className="mr-2 h-4 w-4" /> // Using Chrome icon for Google
                      )}
-                     Sign in with Google
+                     {t('loginPage.googleSignIn')}
                    </Button>
                 </CardFooter>
               </form>
@@ -199,8 +207,8 @@ export default function LoginPage() {
         <TabsContent value="signup">
           <Card>
             <CardHeader>
-              <CardTitle>Sign Up</CardTitle>
-              <CardDescription>Create a new CVForge account.</CardDescription>
+              <CardTitle>{t('loginPage.signUpTitle')}</CardTitle>
+              <CardDescription>{t('loginPage.signUpDescription')}</CardDescription>
             </CardHeader>
             <Form {...signupForm}>
                <form onSubmit={signupForm.handleSubmit(handleSignup)}>
@@ -210,9 +218,9 @@ export default function LoginPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                           <Label htmlFor="signup-email">Email</Label>
+                           <Label htmlFor="signup-email">{t('loginPage.emailLabel')}</Label>
                             <FormControl>
-                                <Input id="signup-email" type="email" placeholder="you@example.com" {...field} disabled={isLoadingSignup || isLoadingGoogle} />
+                                <Input id="signup-email" type="email" placeholder={t('loginPage.emailPlaceholder')} {...field} disabled={isLoadingSignup || isLoadingGoogle} />
                             </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -223,7 +231,7 @@ export default function LoginPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                           <Label htmlFor="signup-password">Password</Label>
+                           <Label htmlFor="signup-password">{t('loginPage.passwordLabel')}</Label>
                            <FormControl>
                              <Input id="signup-password" type="password" {...field} disabled={isLoadingSignup || isLoadingGoogle} />
                             </FormControl>
@@ -236,7 +244,7 @@ export default function LoginPage() {
                        name="confirmPassword"
                        render={({ field }) => (
                          <FormItem>
-                           <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                           <Label htmlFor="signup-confirm-password">{t('loginPage.confirmPasswordLabel')}</Label>
                            <FormControl>
                              <Input id="signup-confirm-password" type="password" {...field} disabled={isLoadingSignup || isLoadingGoogle} />
                            </FormControl>
@@ -248,11 +256,11 @@ export default function LoginPage() {
                  <CardFooter className="flex-col space-y-4">
                    <Button type="submit" className="w-full" disabled={isLoadingSignup || isLoadingGoogle}>
                      {isLoadingSignup && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Sign Up
+                     {t('loginPage.signUpButton')}
                    </Button>
                     <div className="relative w-full">
                       <Separator />
-                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">OR</span>
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">{t('loginPage.or')}</span>
                     </div>
                    <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoadingLogin || isLoadingGoogle || isLoadingSignup}>
                      {isLoadingGoogle ? (
@@ -260,7 +268,7 @@ export default function LoginPage() {
                      ) : (
                         <Chrome className="mr-2 h-4 w-4" /> // Using Chrome icon for Google
                      )}
-                     Sign up with Google
+                     {t('loginPage.googleSignUp')}
                    </Button>
                 </CardFooter>
               </form>
@@ -271,3 +279,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+  

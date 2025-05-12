@@ -1,3 +1,5 @@
+
+// src/components/cv-forge/ExperienceForm.tsx
 'use client';
 
 import type React from 'react';
@@ -11,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import type { CvData, ExperienceEntry } from './types';
 import { AIButton } from './AIButton';
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 
 interface ExperienceFormProps {
@@ -22,6 +25,7 @@ interface ExperienceFormProps {
 }
 
 export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFormProps) {
+  const { t } = useTranslation(); // Get translation function
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "experience",
@@ -42,9 +46,9 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Work Experience</CardTitle>
+        <CardTitle>{t('experience.title')}</CardTitle>
         <Button type="button" variant="outline" size="sm" onClick={addExperience}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Experience
+          <PlusCircle className="mr-2 h-4 w-4" /> {t('experience.addExperience')}
         </Button>
       </CardHeader>
       <CardContent>
@@ -58,9 +62,10 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
                   size="icon"
                   className="absolute top-2 right-2 text-destructive hover:text-destructive/80"
                   onClick={() => remove(index)}
+                  aria-label={t('experience.removeExperience')}
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Remove Experience</span>
+                  <span className="sr-only">{t('experience.removeExperience')}</span>
                 </Button>
 
                 <FormField
@@ -68,9 +73,9 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
                   name={`experience.${index}.jobTitle`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Job Title</FormLabel>
+                      <FormLabel>{t('experience.jobTitleLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Software Developer" {...field} />
+                        <Input placeholder={t('experience.jobTitlePlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -81,9 +86,9 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
                   name={`experience.${index}.company`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Company Name</FormLabel>
+                      <FormLabel>{t('experience.companyLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Tech Solutions Inc." {...field} />
+                        <Input placeholder={t('experience.companyPlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -94,9 +99,9 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
                   name={`experience.${index}.location`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Location</FormLabel>
+                      <FormLabel>{t('experience.locationLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., San Francisco, CA" {...field} />
+                        <Input placeholder={t('experience.locationPlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -108,9 +113,9 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
                     name={`experience.${index}.startDate`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Start Date</FormLabel>
+                        <FormLabel>{t('experience.startDateLabel')}</FormLabel>
                         <FormControl>
-                          <Input type="text" placeholder="e.g., Jan 2020 or 2020" {...field} />
+                          <Input type="text" placeholder={t('experience.startDatePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -121,9 +126,9 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
                     name={`experience.${index}.endDate`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>End Date</FormLabel>
+                        <FormLabel>{t('experience.endDateLabel')}</FormLabel>
                         <FormControl>
-                          <Input type="text" placeholder="e.g., Dec 2022 or Present" {...field} />
+                          <Input type="text" placeholder={t('experience.endDatePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -135,17 +140,17 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
                   name={`experience.${index}.responsibilities`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Key Responsibilities/Achievements</FormLabel>
+                      <FormLabel>{t('experience.responsibilitiesLabel')}</FormLabel>
                        <div className="relative">
                         <FormControl>
-                           <Textarea placeholder="Describe your key contributions and accomplishments (use bullet points if desired)..." {...field} rows={5} />
+                           <Textarea placeholder={t('experience.responsibilitiesPlaceholder')} {...field} rows={5} />
                         </FormControl>
                          <AIButton
                            // Call the props with arguments expected by the wrapper functions in parent
                            onClick={() => enhanceText(index, 'responsibilities', field.value || '')}
                            isLoading={isEnhancing(index, 'responsibilities')}
                            className="absolute bottom-2 right-2"
-                           tooltipContent="Enhance responsibilities with AI"
+                           tooltipContent={t('experience.enhanceResponsibilitiesTooltip')}
                          />
                       </div>
                       <FormMessage />
@@ -156,7 +161,7 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
               </div>
             ))}
              {fields.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">No work experience added yet. Click "Add Experience" to start.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">{t('experience.noExperience')}</p>
              )}
           </div>
         </Form>
@@ -164,3 +169,5 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
     </Card>
   );
 }
+
+  

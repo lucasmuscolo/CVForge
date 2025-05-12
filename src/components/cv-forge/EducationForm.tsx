@@ -1,3 +1,5 @@
+
+// src/components/cv-forge/EducationForm.tsx
 'use client';
 
 import type React from 'react';
@@ -10,12 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import type { CvData } from './types';
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 interface EducationFormProps {
   form: UseFormReturn<CvData>;
 }
 
 export function EducationForm({ form }: EducationFormProps) {
+  const { t } = useTranslation(); // Get translation function
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "education",
@@ -35,9 +39,9 @@ export function EducationForm({ form }: EducationFormProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Education</CardTitle>
+        <CardTitle>{t('education.title')}</CardTitle>
         <Button type="button" variant="outline" size="sm" onClick={addEducation}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Education
+          <PlusCircle className="mr-2 h-4 w-4" /> {t('education.addEducation')}
         </Button>
       </CardHeader>
       <CardContent>
@@ -51,18 +55,19 @@ export function EducationForm({ form }: EducationFormProps) {
                   size="icon"
                   className="absolute top-2 right-2 text-destructive hover:text-destructive/80"
                   onClick={() => remove(index)}
+                  aria-label={t('education.removeEducation')}
                 >
                   <Trash2 className="h-4 w-4" />
-                   <span className="sr-only">Remove Education</span>
+                   <span className="sr-only">{t('education.removeEducation')}</span>
                 </Button>
                 <FormField
                   control={form.control}
                   name={`education.${index}.degree`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Degree/Certificate</FormLabel>
+                      <FormLabel>{t('education.degreeLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., B.S. in Computer Science" {...field} />
+                        <Input placeholder={t('education.degreePlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -73,9 +78,9 @@ export function EducationForm({ form }: EducationFormProps) {
                   name={`education.${index}.institution`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Institution Name</FormLabel>
+                      <FormLabel>{t('education.institutionLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., University of Example" {...field} />
+                        <Input placeholder={t('education.institutionPlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -86,9 +91,9 @@ export function EducationForm({ form }: EducationFormProps) {
                   name={`education.${index}.location`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Location</FormLabel>
+                      <FormLabel>{t('education.locationLabel')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., City, State" {...field} />
+                        <Input placeholder={t('education.locationPlaceholder')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -99,9 +104,9 @@ export function EducationForm({ form }: EducationFormProps) {
                     name={`education.${index}.graduationDate`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Graduation Date</FormLabel>
+                        <FormLabel>{t('education.graduationDateLabel')}</FormLabel>
                         <FormControl>
-                          <Input type="text" placeholder="e.g., May 2019 or Expected: May 2025" {...field} />
+                          <Input type="text" placeholder={t('education.graduationDatePlaceholder')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -113,9 +118,9 @@ export function EducationForm({ form }: EducationFormProps) {
                   name={`education.${index}.details`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Relevant Details (Optional)</FormLabel>
+                      <FormLabel>{t('education.detailsLabel')}</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="e.g., GPA: 3.8, Dean's List, Thesis: ..." {...field} rows={3} />
+                        <Textarea placeholder={t('education.detailsPlaceholder')} {...field} rows={3} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -125,7 +130,7 @@ export function EducationForm({ form }: EducationFormProps) {
               </div>
             ))}
             {fields.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">No education history added yet. Click "Add Education" to start.</p>
+                <p className="text-sm text-muted-foreground text-center py-4">{t('education.noEducation')}</p>
              )}
           </div>
         </Form>
@@ -133,3 +138,5 @@ export function EducationForm({ form }: EducationFormProps) {
     </Card>
   );
 }
+
+  
