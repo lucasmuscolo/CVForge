@@ -271,7 +271,7 @@ export default function CVForgePage() {
      ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience]); // Include AI handlers in dependencies
 
    const previewSection = useMemo(() => (
-       <div className="sticky top-6 print:sticky-auto print:top-auto"> {/* Remove sticky on print */}
+       <div className="md:sticky md:top-6 print:static print:top-auto"> {/* Adjusted sticky positioning */}
            <h2 className="text-xl font-semibold mb-4 text-primary print:hidden">Live Preview</h2> {/* Hide header on print */}
            {/* Pass the cvData state which is updated by form.watch */}
            <CVPreview data={cvData} />
@@ -288,7 +288,6 @@ export default function CVForgePage() {
       <CVForgeLayout
         inputSection={inputSection}
         previewSection={previewSection}
-        // Removed toolbar props
       />
       <Toaster />
     </>
