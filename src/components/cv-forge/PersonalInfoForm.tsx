@@ -6,11 +6,13 @@ import Image from 'next/image'; // Import Image
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button'; // Import Button
 import { Textarea } from '@/components/ui/textarea';
 import type { PersonalInfo } from './types';
 import { AIButton } from './AIButton';
 import { useToast } from '@/hooks/use-toast';
-import { UserCircle } from 'lucide-react'; // Placeholder icon
+import { UserCircle, Upload, Replace } from 'lucide-react'; // Placeholder icon, Upload, Replace
+import { cn } from '@/lib/utils'; // Import cn
 
 interface PersonalInfoFormProps {
   form: UseFormReturn<PersonalInfo>; // Use PersonalInfo directly
@@ -20,6 +22,7 @@ interface PersonalInfoFormProps {
 
 export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInfoFormProps) {
     const { toast } = useToast();
+    const fileInputRef = React.useRef<HTMLInputElement>(null); // Ref for the hidden file input
 
     const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>, field: any) => {
       const file = event.target.files?.[0];
@@ -50,6 +53,11 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
       }
     };
 
+     // Function to trigger the hidden file input click
+    const triggerFileInput = () => {
+        fileInputRef.current?.click();
+    };
+
 
   return (
     <Card>
@@ -77,25 +85,42 @@ export function PersonalInfoForm({ form, enhanceText, isEnhancing }: PersonalInf
                         alt="Profile Preview"
                         width={64} // Adjust size as needed
                         height={64}
-                        className="rounded-full object-cover"
+                        className="rounded-full object-cover border border-border"
                         data-ai-hint="profile picture"
                       />
                     ) : (
                         <UserCircle className="h-16 w-16 text-muted-foreground" /> // Placeholder
                     )}
-                    <FormControl>
-                      {/* Pass field properties BUT override onChange */}
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handlePhotoChange(e, field)}
-                        // Omit field.value and field.ref from being passed directly to file input
-                        // name={field.name} // Keep name if needed for accessibility/labels
-                        // onBlur={field.onBlur} // Keep blur handler
-                        // disabled={field.disabled} // Keep disabled state
-                        className="flex-1"
-                      />
-                    </FormControl>
+                     {/* Hidden Actual File Input */}
+                     <FormControl>
+                         <Input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            onChange={(e) => handlePhotoChange(e, field)}
+                            className="hidden" // Hide the actual input
+                            // Omit field properties handled by the Controller
+                            // Pass other necessary props if needed
+                            id="photo-upload-input" // Add id for label association
+                          />
+                     </FormControl>
+                     {/* Custom Button Trigger */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={triggerFileInput}
+                        className="flex-1" // Adjust width as needed
+                      >
+                         {field.value ? (
+                           <>
+                             <Replace className="mr-2 h-4 w-4" /> Change Photo
+                           </>
+                         ) : (
+                           <>
+                             <Upload className="mr-2 h-4 w-4" /> Upload Photo
+                           </>
+                         )}
+                      </Button>
                   </div>
                   <FormMessage />
                 </FormItem>
