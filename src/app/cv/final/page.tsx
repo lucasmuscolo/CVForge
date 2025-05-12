@@ -2,16 +2,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 import { CVPreview } from '@/components/cv-forge/CVPreview';
 import type { CvData } from '@/components/cv-forge/types';
-import { Button } from '@/components/ui/button'; // Import Button
-import { Printer, ArrowLeft } from 'lucide-react'; // Import Printer and ArrowLeft icons
-import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { Button } from '@/components/ui/button';
+import { Printer, ArrowLeft, Loader2 } from 'lucide-react'; // Added Loader2
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import { getCvData } from '@/lib/firebase/firestore'; // Import Firestore helper
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
-const LOCAL_STORAGE_KEY = 'cvForgeData';
-
-// Default empty state in case local storage is empty or invalid
+// Default empty state
 const defaultCvData: CvData = {
   personalInfo: { name: '', title: '', phone: '', email: '', linkedin: '', github: '', website: '', summary: '', photoDataUri: '' },
   experience: [],
@@ -20,100 +21,122 @@ const defaultCvData: CvData = {
 };
 
 export default function FinalCVPage() {
-  const [cvData, setCvData] = useState<CvData>(defaultCvData);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { currentUser, loading: authLoading } = useAuth(); // Get user and loading state
+  const router = useRouter();
+  const [cvData, setCvData] = useState<CvData | null>(null); // Start with null to indicate loading
+  const [isLoadingData, setIsLoadingData] = useState(true); // Separate loading state for Firestore data
   const { toast } = useToast();
-  const router = useRouter(); // Initialize router
 
-  // Load data from local storage on mount
+   // Redirect unauthenticated users
   useEffect(() => {
-    // Use try-catch for window access to avoid SSR errors
-    try {
-      const savedData = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        // Basic validation
-        if (parsedData && parsedData.personalInfo && Array.isArray(parsedData.experience) && Array.isArray(parsedData.education)) {
-           // Ensure IDs are present for array items, photoDataUri exists, and skills is an array
-            const validatedData: CvData = {
-                ...defaultCvData, // Start with defaults to ensure all fields exist
-                ...parsedData,
-                personalInfo: {
-                    ...defaultCvData.personalInfo, // Ensure all personalInfo fields exist
-                    ...parsedData.personalInfo,
-                },
-                experience: parsedData.experience.map((exp: any) => ({ ...exp, id: exp.id || crypto.randomUUID() })),
-                education: parsedData.education.map((edu: any) => ({ ...edu, id: edu.id || crypto.randomUUID() })),
-                skills: Array.isArray(parsedData.skills) ? parsedData.skills : [], // Ensure skills is an array
-            };
-            setCvData(validatedData);
-        } else {
-            // Reset to default if structure is invalid
-            setCvData(defaultCvData);
-             toast({
-                title: "Data Error",
-                description: "Could not load valid CV data from storage. Displaying default.",
-                variant: "destructive",
-            });
-        }
-      } else {
-        // No data found, use default
-         setCvData(defaultCvData);
-         toast({
-            title: "No CV Data Found",
-            description: "Start creating your CV on the main page.",
-            variant: "default",
-         });
-      }
-    } catch (error) {
-      console.error("Failed to load or parse CV data from local storage:", error);
-       // Reset to default if error occurs
-      setCvData(defaultCvData);
-      toast({
-          title: "Loading Error",
-          description: "Failed to load CV data from local storage.",
-          variant: "destructive",
-      });
+    if (!authLoading && !currentUser) {
+      router.push('/login');
     }
-    setIsLoaded(true);
-  }, [toast]); // Added toast dependency
+  }, [currentUser, authLoading, router]);
+
+
+  // Load data from Firestore on mount for the logged-in user
+  useEffect(() => {
+    if (currentUser && isLoadingData) { // Only load if user exists and data hasn't been loaded yet
+      const loadData = async () => {
+        try {
+          const loadedData = await getCvData(currentUser.uid);
+           const dataToSet = loadedData ? {
+                ...defaultCvData, // Ensure all base fields exist
+                ...loadedData,
+                personalInfo: { ...defaultCvData.personalInfo, ...(loadedData.personalInfo || {}) },
+                experience: (loadedData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
+                education: (loadedData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
+                skills: Array.isArray(loadedData.skills) ? loadedData.skills : [],
+            } : defaultCvData; // Use default if no data found in Firestore
+
+          setCvData(dataToSet);
+        } catch (error) {
+          console.error("Failed to load CV data from Firestore:", error);
+          toast({
+            title: "Error Loading CV",
+            description: "Could not load your CV data. Please try again later.",
+            variant: "destructive",
+          });
+           setCvData(defaultCvData); // Set to default on error
+        } finally {
+          setIsLoadingData(false); // Mark data loading as complete
+        }
+      };
+      loadData();
+    } else if (!currentUser && !authLoading) {
+        // Handle case where user logs out or was never logged in
+        setCvData(defaultCvData);
+        setIsLoadingData(false);
+    }
+  }, [currentUser, isLoadingData, toast, authLoading]); // Added authLoading
 
   const handlePrint = () => {
-      // Access window object safely
       if (typeof window !== 'undefined') {
         window.print();
       }
   };
 
   const handleBack = () => {
-    router.back(); // Navigate to the previous page
+    router.back();
   };
 
+   // Show loading state while checking auth or fetching data
+   if (authLoading || isLoadingData) {
+     return (
+        <div className="bg-secondary min-h-screen p-4 md:p-8">
+           <div className="max-w-4xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
+              {/* Skeleton Header */}
+              <div className="p-4 flex justify-between items-center border-b">
+                 <Skeleton className="h-10 w-10" />
+                 <Skeleton className="h-10 w-40" />
+              </div>
+               {/* Skeleton Preview */}
+               <div className="p-6 md:p-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                         <Skeleton className="h-24 w-24 rounded-full" />
+                         <div className="flex-grow space-y-2">
+                             <Skeleton className="h-8 w-3/4" />
+                             <Skeleton className="h-6 w-1/2" />
+                             <Skeleton className="h-4 w-full" />
+                         </div>
+                    </div>
+                    <Skeleton className="h-20 w-full" /> {/* Summary */}
+                    <Skeleton className="h-16 w-full" /> {/* Skills */}
+                    <Skeleton className="h-40 w-full" /> {/* Experience */}
+                    <Skeleton className="h-32 w-full" /> {/* Education */}
+               </div>
+           </div>
+        </div>
+     );
+   }
 
-  if (!isLoaded) {
-    return <div className="flex justify-center items-center min-h-screen">Loading Final CV...</div>;
-  }
+    // Ensure currentUser exists before rendering the main content
+    if (!currentUser) {
+         // Should be redirected by the effect, but render this as fallback
+        return <div className="flex justify-center items-center min-h-screen">Redirecting to login...</div>;
+    }
+
+   // Ensure cvData is loaded before rendering the preview
+   if (!cvData) {
+        // This state might occur briefly or if loading fails without setting default
+        return <div className="flex justify-center items-center min-h-screen">Loading CV Data...</div>;
+    }
 
   return (
     <div className="bg-secondary min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
-         {/* Header with Buttons (Hidden on Print) */}
          <div className="p-4 flex justify-between items-center border-b print:hidden">
-            {/* Back Button */}
             <Button onClick={handleBack} variant="outline" size="icon">
                <ArrowLeft className="h-4 w-4" />
                <span className="sr-only">Back</span>
             </Button>
-            {/* Print Button */}
             <Button onClick={handlePrint} variant="outline">
                <Printer className="mr-2 h-4 w-4" />
                Print / Save as PDF
             </Button>
          </div>
-        {/* Render the CV Preview component */}
-        {/* Ensure the preview itself doesn't have extra padding/margins for printing */}
         <div className="print:p-0 print:m-0">
-            {/* Pass showFinalButton={false} to hide the button */}
             <CVPreview data={cvData} showFinalButton={false} />
         </div>
       </div>

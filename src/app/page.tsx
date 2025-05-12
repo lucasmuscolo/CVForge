@@ -5,22 +5,28 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm, type UseFormReturn, type FieldValues, type FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Image from 'next/image'; // Import next/image
+import { useRouter } from 'next/navigation'; // Import useRouter
+import Image from 'next/image';
+import { signOut } from 'firebase/auth'; // Import signOut
 
 import { CVForgeLayout } from '@/components/cv-forge/CVForgeLayout';
 import { PersonalInfoForm } from '@/components/cv-forge/PersonalInfoForm';
 import { ExperienceForm } from '@/components/cv-forge/ExperienceForm';
 import { EducationForm } from '@/components/cv-forge/EducationForm';
-import { SkillsForm } from '@/components/cv-forge/SkillsForm'; // Import SkillsForm
+import { SkillsForm } from '@/components/cv-forge/SkillsForm';
 import { CVPreview } from '@/components/cv-forge/CVPreview';
 import type { CvData, PersonalInfo, ExperienceEntry, EducationEntry } from '@/components/cv-forge/types';
 import { enhanceResumeLanguage } from '@/ai/flows/enhance-resume-language';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import { auth } from '@/lib/firebase/config'; // Import auth instance
+import { getCvData, saveCvData } from '@/lib/firebase/firestore'; // Import Firestore helpers
+import { Button } from '@/components/ui/button'; // Import Button
+import { LogOut } from 'lucide-react'; // Import LogOut icon
 
-const LOCAL_STORAGE_KEY = 'cvForgeData';
 
-// Zod Schemas for validation
+// Zod Schemas remain the same
 const personalInfoSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
   title: z.string().min(1, 'Professional title is required'),
@@ -30,7 +36,7 @@ const personalInfoSchema = z.object({
   github: z.string().url('Invalid URL').optional().or(z.literal('')),
   website: z.string().url('Invalid URL').optional().or(z.literal('')),
   summary: z.string().optional(),
-  photoDataUri: z.string().optional(), // Added photo schema
+  photoDataUri: z.string().optional(),
 });
 
 const experienceEntrySchema = z.object({
@@ -56,110 +62,145 @@ const cvDataSchema = z.object({
   personalInfo: personalInfoSchema,
   experience: z.array(experienceEntrySchema),
   education: z.array(educationEntrySchema),
-  skills: z.array(z.string()).optional(), // Added skills schema
+  skills: z.array(z.string()).optional(),
 });
 
-// Default empty state
+// Default empty state remains the same
 const defaultCvData: CvData = {
   personalInfo: {
-    name: '', title: '', phone: '', email: '', linkedin: '', github: '', website: '', summary: '', photoDataUri: '' // Added photo default
+    name: '', title: '', phone: '', email: '', linkedin: '', github: '', website: '', summary: '', photoDataUri: ''
   },
   experience: [],
   education: [],
-  skills: [], // Added skills default
+  skills: [],
 };
 
 export default function CVForgePage() {
+  const { currentUser, loading: authLoading } = useAuth(); // Get user and loading state
+  const router = useRouter();
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [enhancingState, setEnhancingState] = useState<Record<string, boolean>>({}); // Track loading state for AI buttons
+  const [isLoaded, setIsLoaded] = useState(false); // Tracks if Firestore data has been loaded
+  const [isSaving, setIsSaving] = useState(false); // Tracks saving state
+  const [enhancingState, setEnhancingState] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
 
   const form = useForm<CvData>({
     resolver: zodResolver(cvDataSchema),
     defaultValues: defaultCvData,
-    mode: 'onChange', // Validate on change for live feedback
+    mode: 'onChange',
   });
 
-   // Load data from local storage on initial mount
+  // Redirect unauthenticated users
   useEffect(() => {
-    // Use try-catch for window access to avoid SSR errors
-    try {
-        const savedData = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (savedData) {
-            const parsedData = JSON.parse(savedData);
-            // Basic validation to ensure structure matches before setting
-             if (parsedData && parsedData.personalInfo && Array.isArray(parsedData.experience) && Array.isArray(parsedData.education)) {
-                 // Ensure IDs are present for array items, photoDataUri exists, and skills is an array
-                 const validatedData: CvData = {
-                     ...defaultCvData, // Start with defaults to ensure all fields exist
-                     ...parsedData,
-                     personalInfo: {
-                         ...defaultCvData.personalInfo, // Ensure all personalInfo fields exist
-                         ...parsedData.personalInfo,
-                     },
-                     experience: parsedData.experience.map((exp: any) => ({...exp, id: exp.id || crypto.randomUUID()})),
-                     education: parsedData.education.map((edu: any) => ({...edu, id: edu.id || crypto.randomUUID()})),
-                     skills: Array.isArray(parsedData.skills) ? parsedData.skills : [], // Ensure skills is an array
-                 };
-                setCvData(validatedData);
-                form.reset(validatedData); // Reset form with loaded data
-            } else {
-                // Saved data structure is invalid, use default
-                 window.localStorage.removeItem(LOCAL_STORAGE_KEY); // Clean up invalid data
-                 form.reset(defaultCvData);
-            }
-        } else {
-             form.reset(defaultCvData);
-        }
-    } catch (error) {
-      console.error("Failed to load or parse CV data from local storage:", error);
-      // Reset to default if error occurs
-      if (typeof window !== 'undefined') {
-         window.localStorage.removeItem(LOCAL_STORAGE_KEY);
-      }
-      setCvData(defaultCvData);
-      form.reset(defaultCvData);
+    if (!authLoading && !currentUser) {
+      router.push('/login');
     }
-    setIsLoaded(true);
-  }, [form]); // form.reset dependency
+  }, [currentUser, authLoading, router]);
 
 
-   // Subscribe to form changes and update state / save to local storage
+   // Load data from Firestore on initial mount for the logged-in user
   useEffect(() => {
-    if (!isLoaded || typeof window === 'undefined') return; // Don't save initial default state before loading or on server
+     if (currentUser && !isLoaded) { // Only load if user exists and not already loaded
+        const loadData = async () => {
+            try {
+                const loadedData = await getCvData(currentUser.uid);
+                const dataToSet = loadedData ? {
+                    ...defaultCvData, // Ensure all base fields exist
+                     ...loadedData,
+                     personalInfo: { ...defaultCvData.personalInfo, ...(loadedData.personalInfo || {}) },
+                     experience: (loadedData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
+                     education: (loadedData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
+                     skills: Array.isArray(loadedData.skills) ? loadedData.skills : [],
+                } : defaultCvData;
 
-    const subscription = form.watch((value) => {
-       // Ensure value is not undefined and has the expected structure
+                setCvData(dataToSet);
+                form.reset(dataToSet); // Reset form with loaded data
+                setIsLoaded(true); // Mark as loaded
+            } catch (error) {
+                console.error("Failed to load CV data from Firestore:", error);
+                toast({
+                    title: "Error Loading Data",
+                    description: "Could not load your CV data from the server.",
+                    variant: "destructive",
+                });
+                 // Reset to default if error occurs during loading
+                setCvData(defaultCvData);
+                form.reset(defaultCvData);
+                setIsLoaded(true); // Still mark as loaded to prevent reload loop
+            }
+        };
+        loadData();
+     } else if (!currentUser && !authLoading) {
+         // Handle case where user logs out or was never logged in after initial auth check
+         setCvData(defaultCvData);
+         form.reset(defaultCvData);
+         setIsLoaded(true); // Mark as loaded even if no user
+     }
+  }, [currentUser, isLoaded, form, toast, authLoading]); // Add authLoading
+
+
+   // Subscribe to form changes and save to Firestore
+  useEffect(() => {
+     // Only save if data is loaded, there's a user, and auth is not loading
+     if (!isLoaded || !currentUser || authLoading) return;
+
+     const subscription = form.watch((value) => {
        const currentData = value as Partial<CvData>;
        if (currentData && currentData.personalInfo && currentData.experience && currentData.education) {
-            const dataToSave: CvData = {
-                personalInfo: { ...defaultCvData.personalInfo, ...currentData.personalInfo },
-                experience: currentData.experience.map(exp => ({ ...exp })), // Ensure array items are fully formed
-                education: currentData.education.map(edu => ({ ...edu })),
-                skills: Array.isArray(currentData.skills) ? currentData.skills : [], // Ensure skills is saved as an array
-            };
-            setCvData(dataToSave); // Update the state driving the preview
-            try {
-                window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
-            } catch (error) {
-                console.error("Failed to save CV data to local storage:", error);
-                 toast({
-                    title: "Error Saving Data",
-                    description: "Could not save changes to local storage. Your browser might be out of space.",
-                    variant: "destructive",
-                 });
-            }
+         const dataToSave: CvData = {
+           personalInfo: { ...defaultCvData.personalInfo, ...currentData.personalInfo },
+           experience: currentData.experience.map(exp => ({ ...exp })),
+           education: currentData.education.map(edu => ({ ...edu })),
+           skills: Array.isArray(currentData.skills) ? currentData.skills : [],
+         };
+
+         setCvData(dataToSave); // Update the state driving the preview
+
+         // Debounce saving logic if needed, or save directly
+         setIsSaving(true); // Indicate saving start
+         saveCvData(currentUser.uid, dataToSave)
+           .then(() => {
+             // Optional: Add a subtle saving indicator or toast
+             // console.log("CV data saved to Firestore.");
+           })
+           .catch(error => {
+             console.error("Failed to save CV data to Firestore:", error);
+             toast({
+               title: "Error Saving Data",
+               description: "Could not save changes to the server.",
+               variant: "destructive",
+             });
+           })
+           .finally(() => {
+               // Use a small timeout to avoid flickering saving state on rapid changes
+               setTimeout(() => setIsSaving(false), 300);
+           });
        }
-    });
-    return () => subscription.unsubscribe();
-  }, [form, isLoaded, toast]); // isLoaded ensures we only save after initial load
+     });
+     return () => subscription.unsubscribe();
+  }, [form, isLoaded, currentUser, toast, authLoading]); // Add authLoading
+
+  // --- Logout Handler ---
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+      // AuthProvider will handle redirecting to login via the useEffect hook
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast({
+        title: 'Logout Failed',
+        description: 'An error occurred during logout.',
+        variant: 'destructive',
+      });
+    }
+  };
 
 
-  // --- AI Enhancement Logic ---
+  // --- AI Enhancement Logic (remains the same) ---
    const getEnhancingKey = (
-     section: 'personalInfo' | 'experience' | 'education' | 'skills', // Added 'skills'
+     section: 'personalInfo' | 'experience' | 'education' | 'skills',
      fieldName: string,
      index?: number
    ): string => {
@@ -167,7 +208,7 @@ export default function CVForgePage() {
    };
 
   const enhanceText = useCallback(async (
-     section: 'personalInfo' | 'experience' | 'education' | 'skills', // Added 'skills'
+     section: 'personalInfo' | 'experience' | 'education' | 'skills',
      fieldName: FieldPath<CvData>,
      currentText: string,
      index?: number // For experience/education arrays
@@ -182,7 +223,6 @@ export default function CVForgePage() {
       try {
          const result = await enhanceResumeLanguage({ sectionText: currentText });
          if (result?.enhancedText) {
-          // Use setValue from react-hook-form to update the specific field
            form.setValue(fieldName as any, result.enhancedText, { shouldValidate: true, shouldDirty: true });
            toast({ title: "Enhancement Successful", description: "Text has been updated." });
          } else {
@@ -203,9 +243,8 @@ export default function CVForgePage() {
 
   const enhancePersonalInfo = useCallback(
     async (fieldName: keyof PersonalInfo, currentText: string) => {
-       // Ensure fieldName is not 'photoDataUri' before calling enhanceText
         if (fieldName !== 'photoDataUri') {
-            await enhanceText('personalInfo', `personalInfo.${fieldName}`, currentText || ''); // Pass empty string if currentText is null/undefined
+            await enhanceText('personalInfo', `personalInfo.${fieldName}`, currentText || '');
         }
      },
      [enhanceText]
@@ -218,12 +257,8 @@ export default function CVForgePage() {
      [enhanceText]
    );
 
-    // Note: AI enhancement for individual skills might not be very useful,
-    // but the framework allows it if needed later. Currently, no AI button in SkillsForm.
-
-
    const isEnhancing = useCallback(
-     (section: 'personalInfo' | 'experience' | 'education' | 'skills', fieldName: string, index?: number): boolean => { // Added 'skills'
+     (section: 'personalInfo' | 'experience' | 'education' | 'skills', fieldName: string, index?: number): boolean => {
        const key = getEnhancingKey(section, fieldName, index);
        return !!enhancingState[key];
      },
@@ -232,11 +267,10 @@ export default function CVForgePage() {
 
    const isEnhancingPersonalInfo = useCallback(
       (fieldName: keyof PersonalInfo): boolean => {
-        // Check if the key corresponds to a field that allows enhancement
         if (fieldName !== 'photoDataUri') {
            return isEnhancing('personalInfo', fieldName);
         }
-        return false; // Don't show enhancing state for photo
+        return false;
       },
       [isEnhancing]
     );
@@ -244,8 +278,7 @@ export default function CVForgePage() {
 
    const isEnhancingExperience = useCallback(
      (index: number, fieldName: keyof ExperienceEntry): boolean => {
-        // Check if the key corresponds to a field that allows enhancement
-        if (fieldName === 'responsibilities') { // Only responsibilities can be enhanced currently
+        if (fieldName === 'responsibilities') {
              return isEnhancing('experience', fieldName, index);
         }
         return false;
@@ -253,35 +286,69 @@ export default function CVForgePage() {
      [isEnhancing]
    );
 
-   // Memoize components to prevent unnecessary re-renders
+   // Memoize components
    const inputSection = useMemo(() => (
        <div className="space-y-6">
-         <h1 className="text-2xl font-bold text-primary">CVForge</h1>
-         <p className="text-muted-foreground">Build and refine your professional CV.</p>
-         {/* Pass form correctly typed */}
+         {/* Header with Logout Button */}
+         <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-primary">CVForge</h1>
+            {currentUser && (
+                 <Button onClick={handleLogout} variant="outline" size="sm">
+                     <LogOut className="mr-2 h-4 w-4" /> Logout
+                 </Button>
+            )}
+         </div>
+         <p className="text-muted-foreground">Build and refine your professional CV. {isSaving ? <span className="text-xs italic">(Saving...)</span> : <span className="text-xs italic">(Auto-saved)</span>}</p>
          <PersonalInfoForm
-             form={form as UseFormReturn<any>} // Using 'any' temporarily to avoid deep type issues
+             form={form as UseFormReturn<any>}
             enhanceText={enhancePersonalInfo}
             isEnhancing={isEnhancingPersonalInfo}
          />
          <ExperienceForm form={form} enhanceText={enhanceExperienceText} isEnhancing={isEnhancingExperience} />
          <EducationForm form={form} />
-         <SkillsForm form={form} /> {/* Add SkillsForm */}
+         <SkillsForm form={form} />
        </div>
-     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience]); // Include AI handlers in dependencies
+     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser, isSaving]); // Added currentUser and isSaving
 
    const previewSection = useMemo(() => (
-       <div className="md:sticky md:top-6 print:static print:top-auto"> {/* Adjusted sticky positioning */}
-           <h2 className="text-xl font-semibold mb-4 text-primary print:hidden">Live Preview</h2> {/* Hide header on print */}
-           {/* Pass the cvData state which is updated by form.watch */}
+       <div className="md:sticky md:top-6 print:static print:top-auto">
+           <h2 className="text-xl font-semibold mb-4 text-primary print:hidden">Live Preview</h2>
            <CVPreview data={cvData} />
        </div>
    ), [cvData]);
 
-   if (!isLoaded) {
-     // Optional: Add a loading spinner or skeleton screen here
-     return <div className="flex justify-center items-center min-h-screen">Loading CVForge...</div>;
+    // Display loading indicator while auth or initial data load is happening
+   if (authLoading || (!isLoaded && currentUser)) {
+     return (
+        <div className="flex flex-col md:flex-row min-h-screen bg-secondary">
+            {/* Skeleton for Input Section */}
+             <div className="w-full md:w-1/2 lg:w-2/5 p-4 md:p-6 lg:p-8 bg-background shadow-lg space-y-6">
+                <div className="flex justify-between items-center">
+                    <Skeleton className="h-8 w-32" />
+                    <Skeleton className="h-8 w-24" />
+                </div>
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-80 w-full" />
+                <Skeleton className="h-56 w-full" />
+                <Skeleton className="h-40 w-full" />
+             </div>
+             {/* Skeleton for Preview Section */}
+             <div className="w-full md:w-1/2 lg:w-3/5 p-4 md:p-6 lg:p-8">
+                 <Skeleton className="h-6 w-32 mb-4" />
+                 <Skeleton className="h-[80vh] w-full" /> {/* Adjust height as needed */}
+             </div>
+        </div>
+    );
    }
+
+   // Ensure currentUser is checked again after loading to prevent brief render of form before redirect
+   if (!currentUser) {
+        // This should ideally be handled by the redirect effect,
+        // but can serve as a fallback or show a "Redirecting..." message.
+       return <div className="flex justify-center items-center min-h-screen">Redirecting to login...</div>;
+   }
+
 
   return (
     <>
