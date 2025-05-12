@@ -23,27 +23,35 @@ const translationsData: Record<Locale, Record<string, any>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    // Try to get the locale from localStorage or default to 'en'
-    if (typeof window !== 'undefined') {
-      const storedLocale = localStorage.getItem('locale');
-      if (storedLocale === 'en' || storedLocale === 'es') {
-        return storedLocale;
-      }
+  // Initialize with a default locale that is consistent on server and client initially.
+  const [locale, setLocaleState] = useState<Locale>('en');
+
+  // useEffect to set locale from localStorage/navigator only on the client-side after mount.
+  useEffect(() => {
+    let initialLocale: Locale = 'en'; // Default locale
+
+    const storedLocale = localStorage.getItem('locale');
+    if (storedLocale === 'en' || storedLocale === 'es') {
+      initialLocale = storedLocale;
+    } else {
       // Fallback to browser language if no locale is stored
       const browserLang = navigator.language.split('-')[0];
       if (browserLang === 'es') {
-          return 'es';
+        initialLocale = 'es';
       }
     }
-    return 'en'; // Default locale
-  });
+    // Only update if the detected locale is different from the current state
+    // to avoid unnecessary re-renders if it's already 'en'.
+    if (initialLocale !== locale) {
+      setLocaleState(initialLocale);
+    }
+  }, []); // Empty dependency array means this runs once on mount (client-side)
+
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('locale', newLocale);
-    }
+    // localStorage interaction is fine here as it's a user-triggered action
+    localStorage.setItem('locale', newLocale);
   }, []);
 
 
