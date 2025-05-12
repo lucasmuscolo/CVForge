@@ -15,8 +15,10 @@ import { AIButton } from './AIButton';
 
 interface ExperienceFormProps {
   form: UseFormReturn<CvData>;
-   enhanceText: (section: 'experience', index: number, fieldName: keyof ExperienceEntry, currentText: string) => Promise<void>;
-   isEnhancing: (section: 'experience', index: number, fieldName: keyof ExperienceEntry) => boolean;
+   // Corresponds to enhanceExperienceText in parent
+   enhanceText: (index: number, fieldName: keyof ExperienceEntry, currentText: string) => Promise<void>;
+   // Corresponds to isEnhancingExperience in parent
+   isEnhancing: (index: number, fieldName: keyof ExperienceEntry) => boolean;
 }
 
 export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFormProps) {
@@ -139,11 +141,12 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
                            <Textarea placeholder="Describe your key contributions and accomplishments (use bullet points if desired)..." {...field} rows={5} />
                         </FormControl>
                          <AIButton
-                          onClick={() => enhanceText('experience', index, 'responsibilities', field.value)}
-                          isLoading={isEnhancing('experience', index, 'responsibilities')}
-                          className="absolute bottom-2 right-2"
+                           // Call the props with arguments expected by the wrapper functions in parent
+                           onClick={() => enhanceText(index, 'responsibilities', field.value || '')}
+                           isLoading={isEnhancing(index, 'responsibilities')}
+                           className="absolute bottom-2 right-2"
                            tooltipContent="Enhance responsibilities with AI"
-                        />
+                         />
                       </div>
                       <FormMessage />
                     </FormItem>
