@@ -7,6 +7,7 @@ export interface PersonalInfo {
   github?: string;
   website?: string;
   summary: string;
+  photoDataUri?: string; // Added photo field
 }
 
 export interface ExperienceEntry {

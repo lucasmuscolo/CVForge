@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm, type UseFormReturn, type FieldValues, type FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Image from 'next/image'; // Import next/image
 
 import { CVForgeLayout } from '@/components/cv-forge/CVForgeLayout';
 import { PersonalInfoForm } from '@/components/cv-forge/PersonalInfoForm';
@@ -27,6 +28,7 @@ const personalInfoSchema = z.object({
   github: z.string().url('Invalid URL').optional().or(z.literal('')),
   website: z.string().url('Invalid URL').optional().or(z.literal('')),
   summary: z.string().optional(),
+  photoDataUri: z.string().optional(), // Added photo schema
 });
 
 const experienceEntrySchema = z.object({
@@ -57,7 +59,7 @@ const cvDataSchema = z.object({
 // Default empty state
 const defaultCvData: CvData = {
   personalInfo: {
-    name: '', title: '', phone: '', email: '', linkedin: '', github: '', website: '', summary: ''
+    name: '', title: '', phone: '', email: '', linkedin: '', github: '', website: '', summary: '', photoDataUri: '' // Added photo default
   },
   experience: [],
   education: [],
@@ -84,11 +86,16 @@ export default function CVForgePage() {
             const parsedData = JSON.parse(savedData);
             // Basic validation to ensure structure matches before setting
              if (parsedData && parsedData.personalInfo && Array.isArray(parsedData.experience) && Array.isArray(parsedData.education)) {
-                 // Ensure IDs are present for array items
-                 const validatedData = {
+                 // Ensure IDs are present for array items and photoDataUri exists
+                 const validatedData: CvData = {
+                     ...defaultCvData, // Start with defaults to ensure all fields exist
                      ...parsedData,
-                     experience: parsedData.experience.map((exp: ExperienceEntry) => ({...exp, id: exp.id || crypto.randomUUID()})),
-                     education: parsedData.education.map((edu: EducationEntry) => ({...edu, id: edu.id || crypto.randomUUID()})),
+                     personalInfo: {
+                         ...defaultCvData.personalInfo, // Ensure all personalInfo fields exist
+                         ...parsedData.personalInfo,
+                     },
+                     experience: parsedData.experience.map((exp: any) => ({...exp, id: exp.id || crypto.randomUUID()})),
+                     education: parsedData.education.map((edu: any) => ({...edu, id: edu.id || crypto.randomUUID()})),
                  };
                 setCvData(validatedData);
                 form.reset(validatedData); // Reset form with loaded data
@@ -116,12 +123,17 @@ export default function CVForgePage() {
     if (!isLoaded) return; // Don't save initial default state before loading
 
     const subscription = form.watch((value) => {
-       const currentData = value as CvData;
-       // Basic check to ensure data is not undefined/null before saving
+       // Ensure value is not undefined and has the expected structure
+       const currentData = value as Partial<CvData>;
        if (currentData && currentData.personalInfo && currentData.experience && currentData.education) {
-            setCvData(currentData);
+            const dataToSave: CvData = {
+                personalInfo: { ...defaultCvData.personalInfo, ...currentData.personalInfo },
+                experience: currentData.experience.map(exp => ({ ...exp })), // Ensure array items are fully formed
+                education: currentData.education.map(edu => ({ ...edu })),
+            };
+            setCvData(dataToSave); // Update the state driving the preview
             try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentData));
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
             } catch (error) {
                 console.error("Failed to save CV data to local storage:", error);
                  toast({
@@ -182,14 +194,17 @@ export default function CVForgePage() {
 
   const enhancePersonalInfo = useCallback(
     async (fieldName: keyof PersonalInfo, currentText: string) => {
-       await enhanceText('personalInfo', `personalInfo.${fieldName}`, currentText);
+       // Ensure fieldName is not 'photoDataUri' before calling enhanceText
+        if (fieldName !== 'photoDataUri') {
+            await enhanceText('personalInfo', `personalInfo.${fieldName}`, currentText || ''); // Pass empty string if currentText is null/undefined
+        }
      },
      [enhanceText]
    );
 
    const enhanceExperienceText = useCallback(
      async (index: number, fieldName: keyof ExperienceEntry, currentText: string) => {
-       await enhanceText('experience', `experience.${index}.${fieldName}`, currentText, index);
+       await enhanceText('experience', `experience.${index}.${fieldName}`, currentText || '', index);
      },
      [enhanceText]
    );
@@ -221,7 +236,12 @@ export default function CVForgePage() {
        <div className="space-y-6">
          <h1 className="text-2xl font-bold text-primary">CVForge</h1>
          <p className="text-muted-foreground">Build and refine your professional CV.</p>
-         <PersonalInfoForm form={form as UseFormReturn<PersonalInfo>} enhanceText={enhancePersonalInfo} isEnhancing={isEnhancingPersonalInfo} />
+         {/* Pass form.control correctly typed for PersonalInfo */}
+         <PersonalInfoForm
+            form={form as unknown as UseFormReturn<PersonalInfo>}
+            enhanceText={enhancePersonalInfo}
+            isEnhancing={isEnhancingPersonalInfo}
+         />
          <ExperienceForm form={form} enhanceText={enhanceExperienceText} isEnhancing={isEnhancingExperience} />
          <EducationForm form={form} />
        </div>
@@ -230,6 +250,7 @@ export default function CVForgePage() {
    const previewSection = useMemo(() => (
        <div className="sticky top-6">
            <h2 className="text-xl font-semibold mb-4 text-primary">Live Preview</h2>
+           {/* Pass the cvData state which is updated by form.watch */}
            <CVPreview data={cvData} />
        </div>
    ), [cvData]);
