@@ -6,7 +6,12 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import {
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    GoogleAuthProvider, // Import GoogleAuthProvider
+    signInWithPopup // Import signInWithPopup
+} from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +20,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react'; // Import Loader icon
+import { Loader2, Chrome } from 'lucide-react'; // Import Chrome for Google icon
+import { Separator } from '@/components/ui/separator'; // Import Separator
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -38,6 +44,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function LoginPage() {
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [isLoadingSignup, setIsLoadingSignup] = useState(false);
+  const [isLoadingGoogle, setIsLoadingGoogle] = useState(false); // Loading state for Google Sign-In
   const router = useRouter();
   const { toast } = useToast();
 
@@ -88,6 +95,35 @@ export default function LoginPage() {
      }
    };
 
+   // --- Google Sign-In Handler ---
+   const handleGoogleSignIn = async () => {
+       setIsLoadingGoogle(true);
+       const provider = new GoogleAuthProvider();
+       try {
+           await signInWithPopup(auth, provider);
+           toast({ title: 'Google Sign-In Successful', description: 'Redirecting...' });
+           router.push('/'); // Redirect to home page after successful sign-in
+       } catch (error: any) {
+           console.error('Google Sign-In failed:', error);
+           // Handle specific errors like popup closed by user
+           if (error.code === 'auth/popup-closed-by-user') {
+                 toast({
+                    title: 'Sign-In Cancelled',
+                    description: 'You closed the Google Sign-In window.',
+                    variant: 'default', // Use default or warning variant
+                 });
+           } else {
+               toast({
+                   title: 'Google Sign-In Failed',
+                   description: error.message || 'An error occurred during Google Sign-In.',
+                   variant: 'destructive',
+               });
+            }
+       } finally {
+           setIsLoadingGoogle(false);
+       }
+   };
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-secondary p-4">
@@ -114,7 +150,7 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="login-email">Email</Label>
                            <FormControl>
-                             <Input id="login-email" type="email" placeholder="you@example.com" {...field} disabled={isLoadingLogin} />
+                             <Input id="login-email" type="email" placeholder="you@example.com" {...field} disabled={isLoadingLogin || isLoadingGoogle} />
                            </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -127,18 +163,30 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="login-password">Password</Label>
                             <FormControl>
-                              <Input id="login-password" type="password" {...field} disabled={isLoadingLogin} />
+                              <Input id="login-password" type="password" {...field} disabled={isLoadingLogin || isLoadingGoogle} />
                            </FormControl>
                            <FormMessage />
                         </FormItem>
                       )}
                     />
                 </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isLoadingLogin}>
+                <CardFooter className="flex-col space-y-4">
+                   <Button type="submit" className="w-full" disabled={isLoadingLogin || isLoadingGoogle}>
                      {isLoadingLogin && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Login
-                  </Button>
+                     Login
+                   </Button>
+                   <div className="relative w-full">
+                      <Separator />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">OR</span>
+                    </div>
+                   <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoadingLogin || isLoadingGoogle || isLoadingSignup}>
+                     {isLoadingGoogle ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                     ) : (
+                        <Chrome className="mr-2 h-4 w-4" /> // Using Chrome icon for Google
+                     )}
+                     Sign in with Google
+                   </Button>
                 </CardFooter>
               </form>
             </Form>
@@ -162,7 +210,7 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="signup-email">Email</Label>
                             <FormControl>
-                                <Input id="signup-email" type="email" placeholder="you@example.com" {...field} disabled={isLoadingSignup} />
+                                <Input id="signup-email" type="email" placeholder="you@example.com" {...field} disabled={isLoadingSignup || isLoadingGoogle} />
                             </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -175,7 +223,7 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="signup-password">Password</Label>
                            <FormControl>
-                             <Input id="signup-password" type="password" {...field} disabled={isLoadingSignup} />
+                             <Input id="signup-password" type="password" {...field} disabled={isLoadingSignup || isLoadingGoogle} />
                             </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -188,18 +236,30 @@ export default function LoginPage() {
                          <FormItem>
                            <Label htmlFor="signup-confirm-password">Confirm Password</Label>
                            <FormControl>
-                             <Input id="signup-confirm-password" type="password" {...field} disabled={isLoadingSignup} />
+                             <Input id="signup-confirm-password" type="password" {...field} disabled={isLoadingSignup || isLoadingGoogle} />
                            </FormControl>
                            <FormMessage />
                          </FormItem>
                        )}
                      />
                 </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isLoadingSignup}>
+                 <CardFooter className="flex-col space-y-4">
+                   <Button type="submit" className="w-full" disabled={isLoadingSignup || isLoadingGoogle}>
                      {isLoadingSignup && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign Up
-                  </Button>
+                     Sign Up
+                   </Button>
+                    <div className="relative w-full">
+                      <Separator />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">OR</span>
+                    </div>
+                   <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoadingLogin || isLoadingGoogle || isLoadingSignup}>
+                     {isLoadingGoogle ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                     ) : (
+                        <Chrome className="mr-2 h-4 w-4" /> // Using Chrome icon for Google
+                     )}
+                     Sign up with Google
+                   </Button>
                 </CardFooter>
               </form>
             </Form>
