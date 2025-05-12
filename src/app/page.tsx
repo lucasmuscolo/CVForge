@@ -10,6 +10,7 @@ import { CVForgeLayout } from '@/components/cv-forge/CVForgeLayout';
 import { PersonalInfoForm } from '@/components/cv-forge/PersonalInfoForm';
 import { ExperienceForm } from '@/components/cv-forge/ExperienceForm';
 import { EducationForm } from '@/components/cv-forge/EducationForm';
+import { SkillsForm } from '@/components/cv-forge/SkillsForm'; // Import SkillsForm
 import { CVPreview } from '@/components/cv-forge/CVPreview';
 import type { CvData, PersonalInfo, ExperienceEntry, EducationEntry } from '@/components/cv-forge/types';
 import { enhanceResumeLanguage } from '@/ai/flows/enhance-resume-language';
@@ -54,6 +55,7 @@ const cvDataSchema = z.object({
   personalInfo: personalInfoSchema,
   experience: z.array(experienceEntrySchema),
   education: z.array(educationEntrySchema),
+  skills: z.array(z.string()).optional(), // Added skills schema
 });
 
 // Default empty state
@@ -63,6 +65,7 @@ const defaultCvData: CvData = {
   },
   experience: [],
   education: [],
+  skills: [], // Added skills default
 };
 
 export default function CVForgePage() {
@@ -86,7 +89,7 @@ export default function CVForgePage() {
             const parsedData = JSON.parse(savedData);
             // Basic validation to ensure structure matches before setting
              if (parsedData && parsedData.personalInfo && Array.isArray(parsedData.experience) && Array.isArray(parsedData.education)) {
-                 // Ensure IDs are present for array items and photoDataUri exists
+                 // Ensure IDs are present for array items, photoDataUri exists, and skills is an array
                  const validatedData: CvData = {
                      ...defaultCvData, // Start with defaults to ensure all fields exist
                      ...parsedData,
@@ -96,6 +99,7 @@ export default function CVForgePage() {
                      },
                      experience: parsedData.experience.map((exp: any) => ({...exp, id: exp.id || crypto.randomUUID()})),
                      education: parsedData.education.map((edu: any) => ({...edu, id: edu.id || crypto.randomUUID()})),
+                     skills: Array.isArray(parsedData.skills) ? parsedData.skills : [], // Ensure skills is an array
                  };
                 setCvData(validatedData);
                 form.reset(validatedData); // Reset form with loaded data
@@ -130,6 +134,7 @@ export default function CVForgePage() {
                 personalInfo: { ...defaultCvData.personalInfo, ...currentData.personalInfo },
                 experience: currentData.experience.map(exp => ({ ...exp })), // Ensure array items are fully formed
                 education: currentData.education.map(edu => ({ ...edu })),
+                skills: Array.isArray(currentData.skills) ? currentData.skills : [], // Ensure skills is saved as an array
             };
             setCvData(dataToSave); // Update the state driving the preview
             try {
@@ -150,7 +155,7 @@ export default function CVForgePage() {
 
   // --- AI Enhancement Logic ---
    const getEnhancingKey = (
-     section: 'personalInfo' | 'experience' | 'education',
+     section: 'personalInfo' | 'experience' | 'education' | 'skills', // Added 'skills'
      fieldName: string,
      index?: number
    ): string => {
@@ -158,7 +163,7 @@ export default function CVForgePage() {
    };
 
   const enhanceText = useCallback(async (
-     section: 'personalInfo' | 'experience' | 'education',
+     section: 'personalInfo' | 'experience' | 'education' | 'skills', // Added 'skills'
      fieldName: FieldPath<CvData>,
      currentText: string,
      index?: number // For experience/education arrays
@@ -209,8 +214,12 @@ export default function CVForgePage() {
      [enhanceText]
    );
 
+    // Note: AI enhancement for individual skills might not be very useful,
+    // but the framework allows it if needed later. Currently, no AI button in SkillsForm.
+
+
    const isEnhancing = useCallback(
-     (section: 'personalInfo' | 'experience' | 'education', fieldName: string, index?: number): boolean => {
+     (section: 'personalInfo' | 'experience' | 'education' | 'skills', fieldName: string, index?: number): boolean => { // Added 'skills'
        const key = getEnhancingKey(section, fieldName, index);
        return !!enhancingState[key];
      },
@@ -219,14 +228,23 @@ export default function CVForgePage() {
 
    const isEnhancingPersonalInfo = useCallback(
       (fieldName: keyof PersonalInfo): boolean => {
-        return isEnhancing('personalInfo', fieldName);
+        // Check if the key corresponds to a field that allows enhancement
+        if (fieldName !== 'photoDataUri') {
+           return isEnhancing('personalInfo', fieldName);
+        }
+        return false; // Don't show enhancing state for photo
       },
       [isEnhancing]
     );
 
+
    const isEnhancingExperience = useCallback(
      (index: number, fieldName: keyof ExperienceEntry): boolean => {
-       return isEnhancing('experience', fieldName, index);
+        // Check if the key corresponds to a field that allows enhancement
+        if (fieldName === 'responsibilities') { // Only responsibilities can be enhanced currently
+             return isEnhancing('experience', fieldName, index);
+        }
+        return false;
      },
      [isEnhancing]
    );
@@ -236,14 +254,15 @@ export default function CVForgePage() {
        <div className="space-y-6">
          <h1 className="text-2xl font-bold text-primary">CVForge</h1>
          <p className="text-muted-foreground">Build and refine your professional CV.</p>
-         {/* Pass form.control correctly typed for PersonalInfo */}
+         {/* Pass form correctly typed */}
          <PersonalInfoForm
-            form={form as unknown as UseFormReturn<PersonalInfo>}
+             form={form as UseFormReturn<any>} // Using 'any' temporarily to avoid deep type issues
             enhanceText={enhancePersonalInfo}
             isEnhancing={isEnhancingPersonalInfo}
          />
          <ExperienceForm form={form} enhanceText={enhanceExperienceText} isEnhancing={isEnhancingExperience} />
          <EducationForm form={form} />
+         <SkillsForm form={form} /> {/* Add SkillsForm */}
        </div>
      ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience]); // Include AI handlers in dependencies
 

@@ -33,4 +33,5 @@ export interface CvData {
   personalInfo: PersonalInfo;
   experience: ExperienceEntry[];
   education: EducationEntry[];
+  skills: string[]; // Added skills field
 }

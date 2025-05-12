@@ -3,6 +3,7 @@ import Image from 'next/image'; // Import next/image
 import { Mail, Phone, Linkedin, Github, Link as LinkIcon, UserCircle } from 'lucide-react'; // Added UserCircle
 import type { CvData } from './types';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge'; // Import Badge
 
 interface CVPreviewProps {
   data: CvData;
@@ -28,11 +29,11 @@ const formatResponsibilities = (text: string | undefined | null): React.ReactNod
 
 
 export function CVPreview({ data }: CVPreviewProps) {
-  const { personalInfo, experience, education } = data;
+  const { personalInfo, experience, education, skills } = data; // Destructure skills
 
   // Ensure personalInfo exists, providing default empty values if not
   const safePersonalInfo = personalInfo || { name: '', title: '', email: '', phone: '', linkedin: '', github: '', website: '', summary: '', photoDataUri: '' };
-
+  const safeSkills = skills || []; // Ensure skills is an array
 
   return (
     <div className="bg-card text-card-foreground p-6 md:p-8 rounded-lg shadow-md h-full print:shadow-none print:p-0">
@@ -102,6 +103,20 @@ export function CVPreview({ data }: CVPreviewProps) {
          </section>
        )}
 
+      {/* Skills */}
+      {safeSkills.length > 0 && (
+         <section className="mb-6">
+           <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3">Skills</h2>
+           <div className="flex flex-wrap gap-2">
+             {safeSkills.map((skill) => (
+               <Badge key={skill} variant="secondary">
+                 {skill}
+               </Badge>
+             ))}
+           </div>
+         </section>
+       )}
+
 
       {/* Experience */}
       {experience && experience.length > 0 && (
@@ -153,7 +168,7 @@ export function CVPreview({ data }: CVPreviewProps) {
       )}
 
        {/* Placeholder if empty */}
-       {!safePersonalInfo.name && (!experience || experience.length === 0) && (!education || education.length === 0) && (
+       {!safePersonalInfo.name && safeSkills.length === 0 && (!experience || experience.length === 0) && (!education || education.length === 0) && (
           <p className="text-center text-muted-foreground mt-10">Start filling out the forms on the left to see your CV preview here.</p>
        )}
     </div>
