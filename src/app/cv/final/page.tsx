@@ -2,10 +2,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Import useRouter
 import { CVPreview } from '@/components/cv-forge/CVPreview';
 import type { CvData } from '@/components/cv-forge/types';
 import { Button } from '@/components/ui/button'; // Import Button
-import { Printer } from 'lucide-react'; // Import Printer icon
+import { Printer, ArrowLeft } from 'lucide-react'; // Import Printer and ArrowLeft icons
 import { useToast } from '@/hooks/use-toast'; // Import useToast
 
 const LOCAL_STORAGE_KEY = 'cvForgeData';
@@ -22,6 +23,7 @@ export default function FinalCVPage() {
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
   const [isLoaded, setIsLoaded] = useState(false);
   const { toast } = useToast();
+  const router = useRouter(); // Initialize router
 
   // Load data from local storage on mount
   useEffect(() => {
@@ -83,6 +85,11 @@ export default function FinalCVPage() {
       }
   };
 
+  const handleBack = () => {
+    router.back(); // Navigate to the previous page
+  };
+
+
   if (!isLoaded) {
     return <div className="flex justify-center items-center min-h-screen">Loading Final CV...</div>;
   }
@@ -90,8 +97,14 @@ export default function FinalCVPage() {
   return (
     <div className="bg-secondary min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
-         {/* Print Button (Hidden on Print) */}
-         <div className="p-4 text-right border-b print:hidden">
+         {/* Header with Buttons (Hidden on Print) */}
+         <div className="p-4 flex justify-between items-center border-b print:hidden">
+            {/* Back Button */}
+            <Button onClick={handleBack} variant="outline" size="icon">
+               <ArrowLeft className="h-4 w-4" />
+               <span className="sr-only">Back</span>
+            </Button>
+            {/* Print Button */}
             <Button onClick={handlePrint} variant="outline">
                <Printer className="mr-2 h-4 w-4" />
                Print / Save as PDF
