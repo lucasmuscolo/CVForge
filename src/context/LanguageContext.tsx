@@ -12,7 +12,7 @@ type Locale = 'en' | 'es';
 interface LanguageContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  translations: Record<string, any>; // Consider using a more specific type if possible
+  translations: Record<string, any>; 
 }
 
 const translationsData: Record<Locale, Record<string, any>> = {
@@ -23,39 +23,36 @@ const translationsData: Record<Locale, Record<string, any>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialize with a default locale that is consistent on server and client initially.
-  const [locale, setLocaleState] = useState<Locale>('en');
+  const [locale, setLocaleState] = useState<Locale>('en'); // Initialize with a default
 
-  // useEffect to set locale from localStorage/navigator only on the client-side after mount.
   useEffect(() => {
-    let initialLocale: Locale = 'en'; // Default locale
-
+    // This effect runs only on the client, after hydration
+    let initialLocale: Locale = 'en'; 
     const storedLocale = localStorage.getItem('locale');
+
     if (storedLocale === 'en' || storedLocale === 'es') {
       initialLocale = storedLocale;
     } else {
-      // Fallback to browser language if no locale is stored
       const browserLang = navigator.language.split('-')[0];
       if (browserLang === 'es') {
         initialLocale = 'es';
       }
     }
-    // Only update if the detected locale is different from the current state
-    // to avoid unnecessary re-renders if it's already 'en'.
+    
+    // Only call setLocaleState if the determined locale is different
+    // from the one already in state to prevent an unnecessary update.
     if (initialLocale !== locale) {
-      setLocaleState(initialLocale);
+        setLocaleState(initialLocale);
     }
-  }, []); // Empty dependency array means this runs once on mount (client-side)
+  }, []); // Empty dependency array ensures this runs once on mount (client-side)
 
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    // localStorage interaction is fine here as it's a user-triggered action
     localStorage.setItem('locale', newLocale);
   }, []);
 
 
-  // Load translations based on the current locale
   const translations = translationsData[locale];
 
   const value = {
