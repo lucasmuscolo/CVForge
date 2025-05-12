@@ -67,9 +67,11 @@ export default function LoginPage() {
       router.push('/'); // Redirect to home page after successful login
     } catch (error: any) {
       console.error('Login failed:', error);
+      // The catch block correctly handles errors like 'auth/invalid-credential'
+      // by showing a toast message to the user.
       toast({
         title: 'Login Failed',
-        description: error.message || 'An error occurred during login.',
+        description: error.message || 'Invalid credentials or user not found.', // Provide a more specific default message if needed
         variant: 'destructive',
       });
     } finally {

@@ -24,6 +24,7 @@ import { auth } from '@/lib/firebase/config'; // Import auth instance
 import { getCvData, saveCvData } from '@/lib/firebase/firestore'; // Import Firestore helpers
 import { Button } from '@/components/ui/button'; // Import Button
 import { LogOut } from 'lucide-react'; // Import LogOut icon
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 // Zod Schemas remain the same
