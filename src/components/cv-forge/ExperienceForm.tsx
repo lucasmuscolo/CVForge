@@ -1,4 +1,3 @@
-
 // src/components/cv-forge/ExperienceForm.tsx
 'use client';
 
@@ -47,7 +46,13 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{t('experience.title')}</CardTitle>
-        <Button type="button" variant="outline" size="sm" onClick={addExperience}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addExperience}
+          className="px-2" // Reduced horizontal padding
+        >
           <PlusCircle className="mr-2 h-4 w-4" /> {t('experience.addExperience')}
         </Button>
       </CardHeader>
@@ -169,5 +174,3 @@ export function ExperienceForm({ form, enhanceText, isEnhancing }: ExperienceFor
     </Card>
   );
 }
-
-  

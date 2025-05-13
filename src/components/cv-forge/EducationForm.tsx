@@ -1,4 +1,3 @@
-
 // src/components/cv-forge/EducationForm.tsx
 'use client';
 
@@ -40,7 +39,13 @@ export function EducationForm({ form }: EducationFormProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>{t('education.title')}</CardTitle>
-        <Button type="button" variant="outline" size="sm" onClick={addEducation}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addEducation}
+          className="px-2" // Reduced horizontal padding
+        >
           <PlusCircle className="mr-2 h-4 w-4" /> {t('education.addEducation')}
         </Button>
       </CardHeader>
@@ -138,5 +143,3 @@ export function EducationForm({ form }: EducationFormProps) {
     </Card>
   );
 }
-
-  
