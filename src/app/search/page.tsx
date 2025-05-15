@@ -5,7 +5,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { getUserProfile, findUserByEmail, getCvData } from '@/lib/firebase/firestore';
+import { getUserProfile, findUserByCvCode, getCvData } from '@/lib/firebase/firestore'; // Updated import
 import type { CvData } from '@/components/cv-forge/types';
 import { CVPreview } from '@/components/cv-forge/CVPreview';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ export default function RecruiterSearchPage() {
   const [profileChecked, setProfileChecked] = useState(false);
   const [isRecruiter, setIsRecruiter] = useState(false);
 
-  const [searchEmail, setSearchEmail] = useState('');
+  const [searchCvCode, setSearchCvCode] = useState(''); // Changed from searchEmail
   const [searchedCvData, setSearchedCvData] = useState<CvData | null | undefined>(undefined); // undefined: not searched, null: not found, CvData: found
   const [isSearching, setIsSearching] = useState(false);
   const [searchMessage, setSearchMessage] = useState('');
@@ -116,25 +116,25 @@ export default function RecruiterSearchPage() {
 
   const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!searchEmail.trim()) {
-      setSearchMessage(t('searchPage.enterEmailPrompt'));
+    if (!searchCvCode.trim()) {
+      setSearchMessage(t('searchPage.enterCvCodePrompt')); // Updated message key
       setSearchedCvData(undefined);
       return;
     }
-    // Basic email validation
-    if (!/\S+@\S+\.\S+/.test(searchEmail)) {
-        setSearchMessage(t('searchPage.invalidEmail'));
-        setSearchedCvData(undefined);
-        toast({ title: t('searchPage.invalidEmail'), variant: 'destructive' });
-        return;
-    }
+    // Optional: Add validation for CV code format (e.g., length)
+    // if (searchCvCode.trim().length !== 8) {
+    //     setSearchMessage(t('searchPage.invalidCvCode'));
+    //     setSearchedCvData(undefined);
+    //     toast({ title: t('searchPage.invalidCvCode'), variant: 'destructive' });
+    //     return;
+    // }
 
     setIsSearching(true);
     setSearchedCvData(undefined);
     setSearchMessage('');
 
     try {
-      const userFound = await findUserByEmail(searchEmail);
+      const userFound = await findUserByCvCode(searchCvCode.trim()); // Use findUserByCvCode
       if (userFound && userFound.userId) {
         const cvData = await getCvData(userFound.userId);
         if (cvData) {
@@ -146,7 +146,7 @@ export default function RecruiterSearchPage() {
         }
       } else {
         setSearchedCvData(null);
-        setSearchMessage(t('searchPage.emailNotFound'));
+        setSearchMessage(t('searchPage.cvCodeNotFound')); // Updated message key
       }
     } catch (error) {
       console.error("Error during CV search:", error);
@@ -197,13 +197,13 @@ export default function RecruiterSearchPage() {
           <CardContent>
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-end gap-4">
               <div className="w-full sm:flex-grow">
-                <Label htmlFor="search-email" className="mb-1 block">{t('searchPage.searchByEmailLabel')}</Label>
+                <Label htmlFor="search-cv-code" className="mb-1 block">{t('searchPage.searchByCvCodeLabel')}</Label> {/* Updated label */}
                 <Input
-                  id="search-email"
-                  type="email"
-                  placeholder={t('searchPage.searchByEmailPlaceholder')}
-                  value={searchEmail}
-                  onChange={(e) => setSearchEmail(e.target.value)}
+                  id="search-cv-code"
+                  type="text" // Changed type from email
+                  placeholder={t('searchPage.searchByCvCodePlaceholder')} // Updated placeholder
+                  value={searchCvCode}
+                  onChange={(e) => setSearchCvCode(e.target.value)}
                   disabled={isSearching}
                 />
               </div>
@@ -234,7 +234,7 @@ export default function RecruiterSearchPage() {
 
         {!isSearching && searchedCvData === undefined && !searchMessage && (
              <div className="text-center py-10 text-muted-foreground">
-                {t('searchPage.enterEmailPrompt')}
+                {t('searchPage.enterCvCodePrompt')} {/* Updated prompt */}
              </div>
         )}
 

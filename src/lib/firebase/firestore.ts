@@ -8,6 +8,7 @@ import type { CvData } from '@/components/cv-forge/types';
 export interface UserProfile {
   email: string;
   userType: 'creator' | 'recruiter';
+  cvCode?: string; // Added CV code
   // Add other profile fields here if needed in the future
 }
 
@@ -41,23 +42,23 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   }
 };
 
-// Function to find a user by email
-export const findUserByEmail = async (email: string): Promise<{ userId: string; userProfile: UserProfile } | null> => {
-  if (!email) return null;
+// Function to find a user by CV Code
+export const findUserByCvCode = async (cvCode: string): Promise<{ userId: string; userProfile: UserProfile } | null> => {
+  if (!cvCode) return null;
   const usersRef = collection(db, 'users');
-  // Only search for users of type 'creator' as recruiters don't have CVs
-  const q = query(usersRef, where("email", "==", email), where("userType", "==", "creator"), limit(1));
+  // Only search for users of type 'creator' as recruiters don't have CVs associated with CV codes.
+  const q = query(usersRef, where("cvCode", "==", cvCode), where("userType", "==", "creator"), limit(1));
   try {
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
       const userDoc = querySnapshot.docs[0];
       return { userId: userDoc.id, userProfile: userDoc.data() as UserProfile };
     } else {
-      console.log("No user found with email:", email, "and type 'creator'");
+      console.log("No creator user found with CV code:", cvCode);
       return null;
     }
   } catch (error) {
-    console.error("Error finding user by email:", error);
+    console.error("Error finding user by CV code:", error);
     throw error;
   }
 };

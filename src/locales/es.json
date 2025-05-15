@@ -175,21 +175,21 @@
   "searchPage": {
     "title": "Panel de Reclutador",
     "welcome": "¡Bienvenido, Reclutador!",
-    "description": "Usa la búsqueda de abajo para encontrar CVs por dirección de correo electrónico.",
-    "searchPlaceholder": "La funcionalidad de búsqueda se implementará aquí.",
+    "description": "Usa la búsqueda de abajo para encontrar CVs por su código único.",
+    "searchPlaceholder": "La funcionalidad para buscar por código de CV se implementará aquí.",
     "footerRights": "Todos los derechos reservados.",
     "accessDenied": "Acceso Denegado",
     "mustBeRecruiter": "Debes estar registrado como reclutador para acceder a esta página.",
     "searchCVsTitle": "Buscar CVs",
-    "searchCVsDescription": "Ingresa la dirección de correo electrónico del creador del CV para encontrar su currículum.",
-    "searchByEmailLabel": "Buscar por Correo Electrónico",
-    "searchByEmailPlaceholder": "Ingresa el correo electrónico del usuario",
+    "searchCVsDescription": "Ingresa el código de CV de 8 caracteres del creador para encontrar su currículum.",
+    "searchByCvCodeLabel": "Buscar por Código de CV",
+    "searchByCvCodePlaceholder": "Ingresa código de CV de 8 caracteres",
     "searchButton": "Buscar",
     "searching": "Buscando...",
-    "cvNotFound": "No se encontró ningún CV para esta dirección de correo electrónico.",
-    "emailNotFound": "No se encontró ningún usuario con esta dirección de correo electrónico y perfil de 'creador'.",
-    "enterEmailPrompt": "Ingresa una dirección de correo electrónico para buscar un CV.",
+    "cvNotFound": "No se encontró ningún CV para este código.",
+    "cvCodeNotFound": "No se encontró ningún usuario con este código de CV.",
+    "enterCvCodePrompt": "Ingresa un código de CV de 8 caracteres para buscar.",
     "cvResultTitle": "Resultado de Búsqueda de CV",
-    "invalidEmail": "Por favor, ingresa una dirección de correo electrónico válida."
+    "invalidCvCode": "Por favor, ingresa un código de CV válido de 8 caracteres."
   }
 }

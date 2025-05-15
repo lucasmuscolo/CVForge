@@ -27,6 +27,7 @@ import { Loader2, Chrome } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { generateCvCode } from '@/lib/utils'; // Import CV code generator
 
 
 const loginSchema = z.object({
@@ -107,7 +108,8 @@ export default function LoginPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const user = userCredential.user;
         if (user) {
-            await saveUserProfile(user.uid, { email: user.email!, userType: values.userType });
+            const cvCode = values.userType === 'creator' ? generateCvCode() : undefined;
+            await saveUserProfile(user.uid, { email: user.email!, userType: values.userType, cvCode });
             toast({ title: t('loginPage.signUpSuccess'), description: t('loginPage.signUpSuccessDesc') });
             if (values.userType === 'recruiter') {
                 router.push('/search');
@@ -150,10 +152,17 @@ export default function LoginPage() {
            if (user) {
                let userProfile = await getUserProfile(user.uid);
                if (!userProfile) {
-                   // New user or profile doesn't exist, create one defaulting to 'creator'
-                   await saveUserProfile(user.uid, { email: user.email!, userType: 'creator' });
-                   userProfile = { email: user.email!, userType: 'creator' }; // Update local variable for redirection
+                   // New user or profile doesn't exist, default to 'creator' and generate CV code
+                   const cvCode = generateCvCode();
+                   await saveUserProfile(user.uid, { email: user.email!, userType: 'creator', cvCode });
+                   userProfile = { email: user.email!, userType: 'creator', cvCode }; // Update local variable for redirection
+               } else if (userProfile.userType === 'creator' && !userProfile.cvCode) {
+                  // Existing creator profile missing a CV code
+                  const cvCode = generateCvCode();
+                  await saveUserProfile(user.uid, { ...userProfile, cvCode });
+                  userProfile.cvCode = cvCode;
                }
+
                toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
                if (userProfile && userProfile.userType === 'recruiter') {
                    router.push('/search');

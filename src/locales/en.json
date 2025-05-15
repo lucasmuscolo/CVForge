@@ -175,21 +175,21 @@
   "searchPage": {
     "title": "Recruiter Dashboard",
     "welcome": "Welcome, Recruiter!",
-    "description": "Use the search below to find CVs by email address.",
-    "searchPlaceholder": "Search functionality will be implemented here.",
+    "description": "Use the search below to find CVs by their unique code.",
+    "searchPlaceholder": "Functionality to search by CV Code will be implemented here.",
     "footerRights": "All rights reserved.",
     "accessDenied": "Access Denied",
     "mustBeRecruiter": "You must be registered as a recruiter to access this page.",
     "searchCVsTitle": "Search CVs",
-    "searchCVsDescription": "Enter the email address of the CV creator to find their resume.",
-    "searchByEmailLabel": "Search by Email",
-    "searchByEmailPlaceholder": "Enter user's email address",
+    "searchCVsDescription": "Enter the 8-character CV code of the creator to find their resume.",
+    "searchByCvCodeLabel": "Search by CV Code",
+    "searchByCvCodePlaceholder": "Enter 8-character CV code",
     "searchButton": "Search",
     "searching": "Searching...",
-    "cvNotFound": "No CV found for this email address.",
-    "emailNotFound": "No user found with this email address and 'creator' profile type.",
-    "enterEmailPrompt": "Enter an email address to search for a CV.",
+    "cvNotFound": "No CV found for this code.",
+    "cvCodeNotFound": "No user found with this CV code.",
+    "enterCvCodePrompt": "Enter an 8-character CV code to search.",
     "cvResultTitle": "CV Search Result",
-    "invalidEmail": "Please enter a valid email address."
+    "invalidCvCode": "Please enter a valid 8-character CV code."
   }
 }
