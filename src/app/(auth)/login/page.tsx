@@ -106,15 +106,21 @@ export default function LoginPage() {
             throw new Error("User creation failed silently.");
         }
      } catch (error: any) {
-        console.error('Signup failed:', error);
+        let errorTitle = t('loginPage.signUpFailed');
         let errorMessage = t('loginPage.signUpFailedDesc');
+
         if (error.code === 'auth/email-already-in-use') {
+          console.error('Signup failed: Email already in use.', error.message); // More specific console log
           errorMessage = t('loginPage.emailAlreadyInUseDesc');
         } else if (error.code === 'auth/weak-password') {
+          console.error('Signup failed: Weak password.', error.message); // More specific console log
           errorMessage = t('loginPage.weakPasswordDesc');
+        } else {
+          console.error('Signup failed: An unexpected error occurred.', error);
         }
+
         toast({
-            title: t('loginPage.signUpFailed'),
+            title: errorTitle,
             description: errorMessage,
             variant: 'destructive',
         });
@@ -129,13 +135,6 @@ export default function LoginPage() {
        try {
            const result = await signInWithPopup(auth, provider);
            const user = result.user;
-           // For Google Sign-In, we don't have userType pre-selected.
-           // A possible UX is to redirect them to a page to select userType,
-           // or default them and let them change later.
-           // For now, just save basic info and redirect to home.
-           // Or, we could show a dialog here to ask for userType.
-           // For simplicity, let's assume Google users are 'creators' by default for now.
-           // This part might need refinement based on UX decisions.
            if (user) {
                await saveUserProfile(user.uid, { email: user.email!, userType: 'creator' }); // Defaulting to 'creator'
            }
@@ -149,7 +148,7 @@ export default function LoginPage() {
                  toast({
                     title: t('loginPage.signInCancelled'),
                     description: errorMessage,
-                    variant: 'default',
+                    variant: 'default', // Changed to default as it's not strictly an error
                  });
            } else if (error.code === 'auth/account-exists-with-different-credential') {
                errorMessage = t('loginPage.googleAccountExists');
@@ -354,3 +353,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
