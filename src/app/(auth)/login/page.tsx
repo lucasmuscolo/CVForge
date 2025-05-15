@@ -14,14 +14,14 @@ import {
     signInWithPopup
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { saveUserProfile } from '@/lib/firebase/firestore'; // Import saveUserProfile
+import { saveUserProfile, getUserProfile } from '@/lib/firebase/firestore'; // Import getUserProfile
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form'; // Added FormLabel
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Import RadioGroup
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Chrome } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -38,7 +38,7 @@ const signupSchema = z.object({
     email: z.string().email({ message: 'Invalid email address.' }),
     password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
     confirmPassword: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-    userType: z.enum(['creator', 'recruiter'], { required_error: "Please select a user type." }), // Added userType
+    userType: z.enum(['creator', 'recruiter'], { required_error: "Please select a user type." }),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
@@ -63,16 +63,28 @@ export default function LoginPage() {
 
   const signupForm = useForm<SignupFormValues>({
       resolver: zodResolver(signupSchema),
-      defaultValues: { email: '', password: '', confirmPassword: '', userType: undefined }, // Added userType default
+      defaultValues: { email: '', password: '', confirmPassword: '', userType: undefined },
   });
 
 
   const handleLogin = async (values: LoginFormValues) => {
     setIsLoadingLogin(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
       toast({ title: t('loginPage.loginSuccess'), description: t('loginPage.loginSuccessDesc') });
-      router.push('/');
+
+      if (user) {
+        const profile = await getUserProfile(user.uid);
+        if (profile && profile.userType === 'recruiter') {
+          router.push('/search');
+        } else {
+          router.push('/');
+        }
+      } else {
+        // Fallback, should not happen if signInWithEmailAndPassword was successful
+        router.push('/');
+      }
     } catch (error: any) {
       console.error('Login failed:', error);
       let errorMessage = t('loginPage.loginFailedDesc');
@@ -110,10 +122,10 @@ export default function LoginPage() {
         let errorMessage = t('loginPage.signUpFailedDesc');
 
         if (error.code === 'auth/email-already-in-use') {
-          console.error('Signup failed: Email already in use.', error.message); // More specific console log
+          console.error('Signup failed: Email already in use.', error.message);
           errorMessage = t('loginPage.emailAlreadyInUseDesc');
         } else if (error.code === 'auth/weak-password') {
-          console.error('Signup failed: Weak password.', error.message); // More specific console log
+          console.error('Signup failed: Weak password.', error.message);
           errorMessage = t('loginPage.weakPasswordDesc');
         } else {
           console.error('Signup failed: An unexpected error occurred.', error);
@@ -136,10 +148,22 @@ export default function LoginPage() {
            const result = await signInWithPopup(auth, provider);
            const user = result.user;
            if (user) {
-               await saveUserProfile(user.uid, { email: user.email!, userType: 'creator' }); // Defaulting to 'creator'
+               let userProfile = await getUserProfile(user.uid);
+               if (!userProfile) {
+                   // New user or profile doesn't exist, create one defaulting to 'creator'
+                   await saveUserProfile(user.uid, { email: user.email!, userType: 'creator' });
+                   userProfile = { email: user.email!, userType: 'creator' }; // Update local variable for redirection
+               }
+               toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
+               if (userProfile && userProfile.userType === 'recruiter') {
+                   router.push('/search');
+               } else {
+                   router.push('/');
+               }
+           } else {
+                // Fallback, should ideally not be reached if signInWithPopup is successful
+                router.push('/');
            }
-           toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
-           router.push('/');
        } catch (error: any) {
            console.error('Google Sign-In failed:', error);
            let errorMessage = t('loginPage.googleSignInFailedDesc');
@@ -148,7 +172,7 @@ export default function LoginPage() {
                  toast({
                     title: t('loginPage.signInCancelled'),
                     description: errorMessage,
-                    variant: 'default', // Changed to default as it's not strictly an error
+                    variant: 'default',
                  });
            } else if (error.code === 'auth/account-exists-with-different-credential') {
                errorMessage = t('loginPage.googleAccountExists');
