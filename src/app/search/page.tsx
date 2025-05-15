@@ -24,18 +24,19 @@ export default function RecruiterSearchPage() {
 
   useEffect(() => {
     if (authLoading) {
-      setIsLoadingProfile(true); // Keep loading screen while auth is resolving
+      setIsLoadingProfile(true); // Ensure loading state is active while auth is resolving
       return;
     }
 
     if (!currentUser) {
       router.push('/login');
-      return; // Stop further execution if no user
+      setIsLoadingProfile(false); // Crucial: set loading to false if no user, to prevent stuck skeleton
+      return; 
     }
 
     // currentUser exists and authLoading is false
     const checkProfile = async () => {
-      setIsLoadingProfile(true); // Explicitly set loading for this async operation
+      setIsLoadingProfile(true); // Set loading true before the async operation
       try {
         const profile = await getUserProfile(currentUser.uid);
         if (profile && profile.userType === 'recruiter') {
@@ -45,14 +46,18 @@ export default function RecruiterSearchPage() {
           // Not a recruiter, or profile doesn't exist/specify type
           toast({
             title: t('searchPage.accessDenied'),
-            description: profile ? t('searchPage.mustBeRecruiter') : "User profile not found or user is not a recruiter.",
+            description: t('searchPage.mustBeRecruiter'), // Use existing key for both cases
             variant: 'destructive'
           });
           router.push('/'); // Redirect
         }
       } catch (error) {
         console.error("Error fetching user profile for search page:", error);
-        toast({ title: "Error", description: "Failed to verify your user role.", variant: 'destructive' });
+        toast({ 
+            title: t('cvForge.errorSaving'), // Re-using a generic error title
+            description: t('loginPage.signUpFailedDesc'), // Re-using a generic error description
+            variant: 'destructive' 
+        });
         router.push('/'); // Redirect on error
       } finally {
         setIsLoadingProfile(false); // Ensure loading state is always updated
@@ -62,21 +67,6 @@ export default function RecruiterSearchPage() {
     checkProfile();
 
   }, [currentUser, authLoading, router, toast, t]);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast({ title: t('loginPage.loggedOut'), description: t('loginPage.loggedOutDesc') });
-      // AuthProvider will handle redirecting
-    } catch (error) {
-      console.error('Logout failed:', error);
-      toast({
-        title: t('loginPage.logoutFailed'),
-        description: t('loginPage.logoutFailedDesc'),
-        variant: 'destructive',
-      });
-    }
-  };
 
   if (authLoading || isLoadingProfile) {
     return (
@@ -127,4 +117,19 @@ export default function RecruiterSearchPage() {
       </footer>
     </div>
   );
+
+  async function handleLogout() {
+    try {
+      await signOut(auth);
+      toast({ title: t('loginPage.loggedOut'), description: t('loginPage.loggedOutDesc') });
+      // AuthProvider will handle redirecting
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast({
+        title: t('loginPage.logoutFailed'),
+        description: t('loginPage.logoutFailedDesc'),
+        variant: 'destructive',
+      });
+    }
+  }
 }
