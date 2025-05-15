@@ -72,11 +72,9 @@ export default function LoginPage() {
       router.push('/'); // Redirect to home page after successful login
     } catch (error: any) {
       console.error('Login failed:', error);
-      // The catch block correctly handles errors like 'auth/invalid-credential'
-      // by showing a toast message to the user.
       toast({
         title: t('loginPage.loginFailed'),
-        description: error.message || t('loginPage.loginFailedDesc'), // Provide a more specific default message if needed
+        description: t('loginPage.loginFailedDesc'), // Use translated generic message
         variant: 'destructive',
       });
     } finally {
@@ -92,9 +90,16 @@ export default function LoginPage() {
         router.push('/'); // Redirect to home page after successful signup
      } catch (error: any) {
         console.error('Signup failed:', error);
+        // Determine specific error message for signup
+        let errorMessage = t('loginPage.signUpFailedDesc'); // Default generic message
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = t('loginPage.emailAlreadyInUseDesc') || "This email is already in use."; // Fallback if translation missing
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = t('loginPage.weakPasswordDesc') || "The password is too weak."; // Fallback if translation missing
+        }
         toast({
             title: t('loginPage.signUpFailed'),
-            description: error.message || t('loginPage.signUpFailedDesc'),
+            description: errorMessage,
             variant: 'destructive',
         });
      } finally {
@@ -112,17 +117,16 @@ export default function LoginPage() {
            router.push('/'); // Redirect to home page after successful sign-in
        } catch (error: any) {
            console.error('Google Sign-In failed:', error);
-           // Handle specific errors like popup closed by user
            if (error.code === 'auth/popup-closed-by-user') {
                  toast({
                     title: t('loginPage.signInCancelled'),
                     description: t('loginPage.signInCancelledDesc'),
-                    variant: 'default', // Use default or warning variant
+                    variant: 'default',
                  });
            } else {
                toast({
                    title: t('loginPage.googleSignInFailed'),
-                   description: error.message || t('loginPage.googleSignInFailedDesc'),
+                   description: t('loginPage.googleSignInFailedDesc'), // Use translated generic message
                    variant: 'destructive',
                });
             }

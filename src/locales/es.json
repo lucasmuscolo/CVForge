@@ -42,13 +42,15 @@
     "signUpSuccess": "Registro Exitoso",
     "signUpSuccessDesc": "Redirigiendo...",
     "signUpFailed": "Fallo en Registro",
-    "signUpFailedDesc": "Ocurrió un error durante el registro.",
+    "signUpFailedDesc": "Ocurrió un error durante el registro. Por favor, inténtalo de nuevo.",
+    "emailAlreadyInUseDesc": "Este correo electrónico ya está en uso. Por favor, intenta con un correo diferente o inicia sesión.",
+    "weakPasswordDesc": "La contraseña es demasiado débil. Por favor, elige una contraseña más segura (al menos 6 caracteres).",
     "googleSignInSuccess": "Inicio de Sesión con Google Exitoso",
     "googleSignInSuccessDesc": "Redirigiendo...",
     "signInCancelled": "Inicio de Sesión Cancelado",
     "signInCancelledDesc": "Cerraste la ventana de inicio de sesión de Google.",
     "googleSignInFailed": "Fallo en Inicio de Sesión con Google",
-    "googleSignInFailedDesc": "Ocurrió un error durante el inicio de sesión con Google.",
+    "googleSignInFailedDesc": "Ocurrió un error durante el inicio de sesión con Google. Por favor, inténtalo de nuevo.",
     "loggedOut": "Sesión Cerrada",
     "loggedOutDesc": "Has cerrado sesión exitosamente.",
     "logoutFailed": "Fallo al Cerrar Sesión",
@@ -165,5 +167,3 @@
     "toggleLanguage": "Cambiar Idioma"
   }
 }
-
-  

@@ -42,13 +42,15 @@
     "signUpSuccess": "Signup Successful",
     "signUpSuccessDesc": "Redirecting...",
     "signUpFailed": "Signup Failed",
-    "signUpFailedDesc": "An error occurred during signup.",
+    "signUpFailedDesc": "An error occurred during signup. Please try again.",
+    "emailAlreadyInUseDesc": "This email is already in use. Please try a different email or log in.",
+    "weakPasswordDesc": "The password is too weak. Please choose a stronger password (at least 6 characters).",
     "googleSignInSuccess": "Google Sign-In Successful",
     "googleSignInSuccessDesc": "Redirecting...",
     "signInCancelled": "Sign-In Cancelled",
     "signInCancelledDesc": "You closed the Google Sign-In window.",
     "googleSignInFailed": "Google Sign-In Failed",
-    "googleSignInFailedDesc": "An error occurred during Google Sign-In.",
+    "googleSignInFailedDesc": "An error occurred during Google Sign-In. Please try again.",
     "loggedOut": "Logged Out",
     "loggedOutDesc": "You have been successfully logged out.",
     "logoutFailed": "Logout Failed",
@@ -165,5 +167,3 @@
     "toggleLanguage": "Toggle Language"
   }
 }
-
-  
