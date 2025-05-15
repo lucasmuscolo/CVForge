@@ -1,6 +1,6 @@
 
 // src/lib/firebase/firestore.ts
-import { doc, getDoc, setDoc, type DocumentReference, type DocumentData } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, limit, type DocumentReference, type DocumentData } from 'firebase/firestore';
 import { db } from './config';
 import type { CvData } from '@/components/cv-forge/types';
 
@@ -41,6 +41,27 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   }
 };
 
+// Function to find a user by email
+export const findUserByEmail = async (email: string): Promise<{ userId: string; userProfile: UserProfile } | null> => {
+  if (!email) return null;
+  const usersRef = collection(db, 'users');
+  // Only search for users of type 'creator' as recruiters don't have CVs
+  const q = query(usersRef, where("email", "==", email), where("userType", "==", "creator"), limit(1));
+  try {
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      const userDoc = querySnapshot.docs[0];
+      return { userId: userDoc.id, userProfile: userDoc.data() as UserProfile };
+    } else {
+      console.log("No user found with email:", email, "and type 'creator'");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error finding user by email:", error);
+    throw error;
+  }
+};
+
 
 // --- CV Data Functions ---
 
@@ -73,3 +94,4 @@ export const saveCvData = async (userId: string, data: CvData): Promise<void> =>
      throw error;
    }
 };
+

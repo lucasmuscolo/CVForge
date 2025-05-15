@@ -5,27 +5,32 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { getUserProfile } from '@/lib/firebase/firestore';
+import { getUserProfile, findUserByEmail, getCvData } from '@/lib/firebase/firestore';
+import type { CvData } from '@/components/cv-forge/types';
+import { CVPreview } from '@/components/cv-forge/CVPreview';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { LogOut, Search, Loader2 } from 'lucide-react';
 import { auth } from '@/lib/firebase/config';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Define handleLogout outside the component to ensure stable reference
-const performLogout = async (authInstance: typeof auth, toast: ReturnType<typeof useToast>['toast'], t: ReturnType<typeof useTranslation>['t']) => {
+const performLogout = async (authInstance: typeof auth, toastFn: ReturnType<typeof useToast>['toast'], tFn: ReturnType<typeof useTranslation>['t']) => {
   try {
     await signOut(authInstance);
-    toast({ title: t('loginPage.loggedOut'), description: t('loginPage.loggedOutDesc') });
+    toastFn({ title: tFn('loginPage.loggedOut'), description: tFn('loginPage.loggedOutDesc') });
     // AuthProvider will handle redirecting
   } catch (error) {
     console.error('Logout failed:', error);
-    toast({
-      title: t('loginPage.logoutFailed'),
-      description: t('loginPage.logoutFailedDesc'),
+    toastFn({
+      title: tFn('loginPage.logoutFailed'),
+      description: tFn('loginPage.logoutFailedDesc'),
       variant: 'destructive',
     });
   }
@@ -41,29 +46,34 @@ export default function RecruiterSearchPage() {
   const [profileChecked, setProfileChecked] = useState(false);
   const [isRecruiter, setIsRecruiter] = useState(false);
 
+  const [searchEmail, setSearchEmail] = useState('');
+  const [searchedCvData, setSearchedCvData] = useState<CvData | null | undefined>(undefined); // undefined: not searched, null: not found, CvData: found
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchMessage, setSearchMessage] = useState('');
+
+
   // useCallback for stable function references for dependencies
   const stableRouterPush = useCallback((path: string) => router.push(path), [router]);
-  const stableToast = useCallback(toast, [toast]); // Assuming toast itself is stable or useToast provides stable functions
-  const stableT = useCallback(t, [t]); // Assuming t itself is stable
+  const stableToast = useCallback(toast, []); 
+  const stableT = useCallback(t, [t]);
 
 
   useEffect(() => {
     if (authLoading) {
       setLocalLoading(true);
-      setProfileChecked(false); // Reset profile check if auth state changes
-      setIsRecruiter(false);   // Reset recruiter status
+      setProfileChecked(false); 
+      setIsRecruiter(false);   
       return;
     }
 
     if (!currentUser) {
       stableRouterPush('/login');
-      setLocalLoading(false); // Stop loading as we are redirecting
+      setLocalLoading(false); 
       return;
     }
 
-    // CurrentUser exists and auth is done
     if (!profileChecked) {
-      setLocalLoading(true); // Start loading for profile check
+      setLocalLoading(true); 
       getUserProfile(currentUser.uid)
         .then((profile) => {
           if (profile && profile.userType === 'recruiter') {
@@ -82,8 +92,8 @@ export default function RecruiterSearchPage() {
           console.error("Error fetching user profile for search page:", error);
           setIsRecruiter(false);
           stableToast({
-            title: stableT('cvForge.errorSaving'),
-            description: stableT('loginPage.signUpFailedDesc'),
+            title: stableT('cvForge.errorSaving'), // Consider a more generic error message here
+            description: stableT('loginPage.signUpFailedDesc'), // Or a specific one for profile load failure
             variant: 'destructive',
           });
           stableRouterPush('/');
@@ -93,9 +103,7 @@ export default function RecruiterSearchPage() {
           setLocalLoading(false);
         });
     } else {
-      // Profile has been checked, localLoading should be false if not already.
-      // This handles cases where effect might re-run with profileChecked = true.
-      if (localLoading) { // only update if necessary
+      if (localLoading) { 
         setLocalLoading(false);
       }
     }
@@ -105,6 +113,50 @@ export default function RecruiterSearchPage() {
   const handleLogoutClick = useCallback(() => {
     performLogout(auth, toast, t);
   }, [toast, t]);
+
+  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!searchEmail.trim()) {
+      setSearchMessage(t('searchPage.enterEmailPrompt'));
+      setSearchedCvData(undefined);
+      return;
+    }
+    // Basic email validation
+    if (!/\S+@\S+\.\S+/.test(searchEmail)) {
+        setSearchMessage(t('searchPage.invalidEmail'));
+        setSearchedCvData(undefined);
+        toast({ title: t('searchPage.invalidEmail'), variant: 'destructive' });
+        return;
+    }
+
+    setIsSearching(true);
+    setSearchedCvData(undefined);
+    setSearchMessage('');
+
+    try {
+      const userFound = await findUserByEmail(searchEmail);
+      if (userFound && userFound.userId) {
+        const cvData = await getCvData(userFound.userId);
+        if (cvData) {
+          setSearchedCvData(cvData);
+          setSearchMessage(''); // Clear message on success
+        } else {
+          setSearchedCvData(null);
+          setSearchMessage(t('searchPage.cvNotFound'));
+        }
+      } else {
+        setSearchedCvData(null);
+        setSearchMessage(t('searchPage.emailNotFound'));
+      }
+    } catch (error) {
+      console.error("Error during CV search:", error);
+      setSearchedCvData(null);
+      setSearchMessage(t('cvForge.errorSavingDesc')); // Generic error
+      toast({ title: t('cvForge.errorSaving'), description: t('cvForge.errorSavingDesc'), variant: 'destructive' });
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
 
   if (localLoading) {
@@ -118,15 +170,10 @@ export default function RecruiterSearchPage() {
     );
   }
 
-  // After loading, if user is not a recruiter (and profile has been checked),
-  // they should have been redirected. This is a fallback.
   if (!isRecruiter) {
-    // This content might show briefly if redirection from useEffect is asynchronous.
-    // Or if the user somehow lands here when they shouldn't.
     return <div className="flex justify-center items-center min-h-screen">{t('searchPage.accessDenied')}</div>;
   }
 
-  // If we reach here: user is authenticated, profile checked, is a recruiter, and not loading.
   return (
     <div className="flex flex-col min-h-screen bg-secondary">
       <header className="bg-background shadow-md print:hidden">
@@ -142,15 +189,66 @@ export default function RecruiterSearchPage() {
       </header>
 
       <main className="flex-grow container mx-auto p-4 md:p-8">
-        <div className="bg-background p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold mb-4 text-primary">{t('searchPage.welcome')}</h2>
-          <p className="text-muted-foreground mb-6">
-            {t('searchPage.description')}
-          </p>
-          <div className="border-2 border-dashed border-border rounded-lg p-10 text-center">
-            <p className="text-muted-foreground">{t('searchPage.searchPlaceholder')}</p>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>{t('searchPage.searchCVsTitle')}</CardTitle>
+            <CardDescription>{t('searchPage.searchCVsDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-end gap-4">
+              <div className="w-full sm:flex-grow">
+                <Label htmlFor="search-email" className="mb-1 block">{t('searchPage.searchByEmailLabel')}</Label>
+                <Input
+                  id="search-email"
+                  type="email"
+                  placeholder={t('searchPage.searchByEmailPlaceholder')}
+                  value={searchEmail}
+                  onChange={(e) => setSearchEmail(e.target.value)}
+                  disabled={isSearching}
+                />
+              </div>
+              <Button type="submit" disabled={isSearching} className="w-full sm:w-auto">
+                {isSearching ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="mr-2 h-4 w-4" />
+                )}
+                {t('searchPage.searchButton')}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {isSearching && (
+          <div className="flex justify-center items-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-2 text-muted-foreground">{t('searchPage.searching')}</p>
           </div>
-        </div>
+        )}
+
+        {!isSearching && searchMessage && (
+          <div className="text-center py-10 text-muted-foreground">
+            {searchMessage}
+          </div>
+        )}
+
+        {!isSearching && searchedCvData === undefined && !searchMessage && (
+             <div className="text-center py-10 text-muted-foreground">
+                {t('searchPage.enterEmailPrompt')}
+             </div>
+        )}
+
+
+        {!isSearching && searchedCvData && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('searchPage.cvResultTitle')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CVPreview data={searchedCvData} showFinalButton={false} />
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       <footer className="bg-background text-center p-4 text-sm text-muted-foreground print:hidden">
