@@ -27,6 +27,7 @@
     "emailLabel": "Correo Electrónico",
     "emailPlaceholder": "tu@ejemplo.com",
     "passwordLabel": "Contraseña",
+    "passwordPlaceholder": "Tu contraseña",
     "loginButton": "Iniciar Sesión",
     "or": "O",
     "googleSignIn": "Iniciar sesión con Google",
@@ -38,9 +39,10 @@
     "loginSuccess": "Inicio de Sesión Exitoso",
     "loginSuccessDesc": "Redirigiendo...",
     "loginFailed": "Fallo en Inicio de Sesión",
-    "loginFailedDesc": "Credenciales inválidas o usuario no encontrado.",
+    "loginFailedDesc": "Ocurrió un error. Por favor, verifica tus credenciales o inténtalo de nuevo.",
+    "invalidCredentials": "Correo electrónico o contraseña incorrectos. Por favor, inténtalo de nuevo.",
     "signUpSuccess": "Registro Exitoso",
-    "signUpSuccessDesc": "Redirigiendo...",
+    "signUpSuccessDesc": "Tu cuenta ha sido creada. Redirigiendo...",
     "signUpFailed": "Fallo en Registro",
     "signUpFailedDesc": "Ocurrió un error durante el registro. Por favor, inténtalo de nuevo.",
     "emailAlreadyInUseDesc": "Este correo electrónico ya está en uso. Por favor, intenta con un correo diferente o inicia sesión.",
@@ -51,10 +53,14 @@
     "signInCancelledDesc": "Cerraste la ventana de inicio de sesión de Google.",
     "googleSignInFailed": "Fallo en Inicio de Sesión con Google",
     "googleSignInFailedDesc": "Ocurrió un error durante el inicio de sesión con Google. Por favor, inténtalo de nuevo.",
+    "googleAccountExists": "Ya existe una cuenta con esta dirección de correo electrónico utilizando un método de inicio de sesión diferente. Por favor, inicia sesión con tu método original.",
     "loggedOut": "Sesión Cerrada",
     "loggedOutDesc": "Has cerrado sesión exitosamente.",
     "logoutFailed": "Fallo al Cerrar Sesión",
-    "logoutFailedDesc": "Ocurrió un error al cerrar sesión."
+    "logoutFailedDesc": "Ocurrió un error al cerrar sesión.",
+    "userTypeLabel": "¿Cómo usarás la aplicación?",
+    "userTypeCreator": "Voy a crear mi currículum",
+    "userTypeRecruiter": "Quiero buscar currículums (Reclutador)"
   },
   "personalInfo": {
     "title": "Información Personal",
@@ -165,5 +171,14 @@
   },
   "buttons": {
     "toggleLanguage": "Cambiar Idioma"
+  },
+  "searchPage": {
+    "title": "Panel de Reclutador",
+    "welcome": "¡Bienvenido, Reclutador!",
+    "description": "Este es tu espacio para buscar y encontrar CVs. La funcionalidad de búsqueda se implementará aquí.",
+    "searchPlaceholder": "Búsqueda de CVs (Próximamente)",
+    "footerRights": "Todos los derechos reservados.",
+    "accessDenied": "Acceso Denegado",
+    "mustBeRecruiter": "Debes estar registrado como reclutador para acceder a esta página."
   }
 }

@@ -27,6 +27,7 @@
     "emailLabel": "Email",
     "emailPlaceholder": "you@example.com",
     "passwordLabel": "Password",
+    "passwordPlaceholder": "Your password",
     "loginButton": "Login",
     "or": "OR",
     "googleSignIn": "Sign in with Google",
@@ -38,9 +39,10 @@
     "loginSuccess": "Login Successful",
     "loginSuccessDesc": "Redirecting...",
     "loginFailed": "Login Failed",
-    "loginFailedDesc": "Invalid credentials or user not found.",
+    "loginFailedDesc": "An error occurred. Please check your credentials or try again.",
+    "invalidCredentials": "Invalid email or password. Please try again.",
     "signUpSuccess": "Signup Successful",
-    "signUpSuccessDesc": "Redirecting...",
+    "signUpSuccessDesc": "Your account has been created. Redirecting...",
     "signUpFailed": "Signup Failed",
     "signUpFailedDesc": "An error occurred during signup. Please try again.",
     "emailAlreadyInUseDesc": "This email is already in use. Please try a different email or log in.",
@@ -51,10 +53,14 @@
     "signInCancelledDesc": "You closed the Google Sign-In window.",
     "googleSignInFailed": "Google Sign-In Failed",
     "googleSignInFailedDesc": "An error occurred during Google Sign-In. Please try again.",
+    "googleAccountExists": "An account already exists with this email address using a different sign-in method. Please sign in with your original method.",
     "loggedOut": "Logged Out",
     "loggedOutDesc": "You have been successfully logged out.",
     "logoutFailed": "Logout Failed",
-    "logoutFailedDesc": "An error occurred during logout."
+    "logoutFailedDesc": "An error occurred during logout.",
+    "userTypeLabel": "How will you use the application?",
+    "userTypeCreator": "I'm creating my CV",
+    "userTypeRecruiter": "I'm looking for CVs (Recruiter)"
   },
   "personalInfo": {
     "title": "Personal Information",
@@ -165,5 +171,14 @@
   },
   "buttons": {
     "toggleLanguage": "Toggle Language"
+  },
+  "searchPage": {
+    "title": "Recruiter Dashboard",
+    "welcome": "Welcome, Recruiter!",
+    "description": "This is your space to search and find CVs. Search functionality will be implemented here.",
+    "searchPlaceholder": "CV Search (Coming Soon)",
+    "footerRights": "All rights reserved.",
+    "accessDenied": "Access Denied",
+    "mustBeRecruiter": "You must be registered as a recruiter to access this page."
   }
 }

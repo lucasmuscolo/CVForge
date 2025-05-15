@@ -10,21 +10,23 @@ import { z } from 'zod';
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    GoogleAuthProvider, // Import GoogleAuthProvider
-    signInWithPopup // Import signInWithPopup
+    GoogleAuthProvider,
+    signInWithPopup
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
+import { saveUserProfile } from '@/lib/firebase/firestore'; // Import saveUserProfile
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form'; // Added FormLabel
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Import RadioGroup
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Chrome } from 'lucide-react'; // Import Chrome for Google icon
-import { Separator } from '@/components/ui/separator'; // Import Separator
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'; // Import LanguageSwitcher
+import { Loader2, Chrome } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { useTranslation } from '@/hooks/useTranslation';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 
 const loginSchema = z.object({
@@ -36,9 +38,10 @@ const signupSchema = z.object({
     email: z.string().email({ message: 'Invalid email address.' }),
     password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
     confirmPassword: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
+    userType: z.enum(['creator', 'recruiter'], { required_error: "Please select a user type." }), // Added userType
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
-    path: ["confirmPassword"], // path of error
+    path: ["confirmPassword"],
 });
 
 
@@ -48,10 +51,10 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function LoginPage() {
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [isLoadingSignup, setIsLoadingSignup] = useState(false);
-  const [isLoadingGoogle, setIsLoadingGoogle] = useState(false); // Loading state for Google Sign-In
+  const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { t } = useTranslation(); // Get translation function
+  const { t } = useTranslation();
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -60,7 +63,7 @@ export default function LoginPage() {
 
   const signupForm = useForm<SignupFormValues>({
       resolver: zodResolver(signupSchema),
-      defaultValues: { email: '', password: '', confirmPassword: '' },
+      defaultValues: { email: '', password: '', confirmPassword: '', userType: undefined }, // Added userType default
   });
 
 
@@ -69,12 +72,16 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({ title: t('loginPage.loginSuccess'), description: t('loginPage.loginSuccessDesc') });
-      router.push('/'); // Redirect to home page after successful login
+      router.push('/');
     } catch (error: any) {
       console.error('Login failed:', error);
+      let errorMessage = t('loginPage.loginFailedDesc');
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMessage = t('loginPage.invalidCredentials');
+      }
       toast({
         title: t('loginPage.loginFailed'),
-        description: t('loginPage.loginFailedDesc'), // Use translated generic message
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -85,17 +92,26 @@ export default function LoginPage() {
   const handleSignup = async (values: SignupFormValues) => {
      setIsLoadingSignup(true);
      try {
-        await createUserWithEmailAndPassword(auth, values.email, values.password);
-        toast({ title: t('loginPage.signUpSuccess'), description: t('loginPage.signUpSuccessDesc') });
-        router.push('/'); // Redirect to home page after successful signup
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const user = userCredential.user;
+        if (user) {
+            await saveUserProfile(user.uid, { email: user.email!, userType: values.userType });
+            toast({ title: t('loginPage.signUpSuccess'), description: t('loginPage.signUpSuccessDesc') });
+            if (values.userType === 'recruiter') {
+                router.push('/search');
+            } else {
+                router.push('/');
+            }
+        } else {
+            throw new Error("User creation failed silently.");
+        }
      } catch (error: any) {
         console.error('Signup failed:', error);
-        // Determine specific error message for signup
-        let errorMessage = t('loginPage.signUpFailedDesc'); // Default generic message
+        let errorMessage = t('loginPage.signUpFailedDesc');
         if (error.code === 'auth/email-already-in-use') {
-          errorMessage = t('loginPage.emailAlreadyInUseDesc') || "This email is already in use."; // Fallback if translation missing
+          errorMessage = t('loginPage.emailAlreadyInUseDesc');
         } else if (error.code === 'auth/weak-password') {
-          errorMessage = t('loginPage.weakPasswordDesc') || "The password is too weak."; // Fallback if translation missing
+          errorMessage = t('loginPage.weakPasswordDesc');
         }
         toast({
             title: t('loginPage.signUpFailed'),
@@ -107,26 +123,46 @@ export default function LoginPage() {
      }
    };
 
-   // --- Google Sign-In Handler ---
    const handleGoogleSignIn = async () => {
        setIsLoadingGoogle(true);
        const provider = new GoogleAuthProvider();
        try {
-           await signInWithPopup(auth, provider);
+           const result = await signInWithPopup(auth, provider);
+           const user = result.user;
+           // For Google Sign-In, we don't have userType pre-selected.
+           // A possible UX is to redirect them to a page to select userType,
+           // or default them and let them change later.
+           // For now, just save basic info and redirect to home.
+           // Or, we could show a dialog here to ask for userType.
+           // For simplicity, let's assume Google users are 'creators' by default for now.
+           // This part might need refinement based on UX decisions.
+           if (user) {
+               await saveUserProfile(user.uid, { email: user.email!, userType: 'creator' }); // Defaulting to 'creator'
+           }
            toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
-           router.push('/'); // Redirect to home page after successful sign-in
+           router.push('/');
        } catch (error: any) {
            console.error('Google Sign-In failed:', error);
+           let errorMessage = t('loginPage.googleSignInFailedDesc');
            if (error.code === 'auth/popup-closed-by-user') {
+                 errorMessage = t('loginPage.signInCancelledDesc');
                  toast({
                     title: t('loginPage.signInCancelled'),
-                    description: t('loginPage.signInCancelledDesc'),
+                    description: errorMessage,
                     variant: 'default',
                  });
-           } else {
+           } else if (error.code === 'auth/account-exists-with-different-credential') {
+               errorMessage = t('loginPage.googleAccountExists');
                toast({
                    title: t('loginPage.googleSignInFailed'),
-                   description: t('loginPage.googleSignInFailedDesc'), // Use translated generic message
+                   description: errorMessage,
+                   variant: 'destructive',
+               });
+           }
+           else {
+               toast({
+                   title: t('loginPage.googleSignInFailed'),
+                   description: errorMessage,
                    variant: 'destructive',
                });
             }
@@ -177,7 +213,7 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="login-password">{t('loginPage.passwordLabel')}</Label>
                             <FormControl>
-                              <Input id="login-password" type="password" {...field} disabled={isLoadingLogin || isLoadingGoogle} />
+                              <Input id="login-password" type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} disabled={isLoadingLogin || isLoadingGoogle} />
                            </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -197,7 +233,7 @@ export default function LoginPage() {
                      {isLoadingGoogle ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                      ) : (
-                        <Chrome className="mr-2 h-4 w-4" /> // Using Chrome icon for Google
+                        <Chrome className="mr-2 h-4 w-4" />
                      )}
                      {t('loginPage.googleSignIn')}
                    </Button>
@@ -237,7 +273,7 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="signup-password">{t('loginPage.passwordLabel')}</Label>
                            <FormControl>
-                             <Input id="signup-password" type="password" {...field} disabled={isLoadingSignup || isLoadingGoogle} />
+                             <Input id="signup-password" type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} disabled={isLoadingSignup || isLoadingGoogle} />
                             </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -250,12 +286,47 @@ export default function LoginPage() {
                          <FormItem>
                            <Label htmlFor="signup-confirm-password">{t('loginPage.confirmPasswordLabel')}</Label>
                            <FormControl>
-                             <Input id="signup-confirm-password" type="password" {...field} disabled={isLoadingSignup || isLoadingGoogle} />
+                             <Input id="signup-confirm-password" type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} disabled={isLoadingSignup || isLoadingGoogle} />
                            </FormControl>
                            <FormMessage />
                          </FormItem>
                        )}
                      />
+                    <FormField
+                        control={signupForm.control}
+                        name="userType"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                                <FormLabel>{t('loginPage.userTypeLabel')}</FormLabel>
+                                <FormControl>
+                                    <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="flex flex-col space-y-1"
+                                        disabled={isLoadingSignup || isLoadingGoogle}
+                                    >
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                            <FormControl>
+                                                <RadioGroupItem value="creator" />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">
+                                                {t('loginPage.userTypeCreator')}
+                                            </FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-3 space-y-0">
+                                            <FormControl>
+                                                <RadioGroupItem value="recruiter" />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">
+                                                {t('loginPage.userTypeRecruiter')}
+                                            </FormLabel>
+                                        </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </CardContent>
                  <CardFooter className="flex-col space-y-4">
                    <Button type="submit" className="w-full" disabled={isLoadingSignup || isLoadingGoogle}>
@@ -270,7 +341,7 @@ export default function LoginPage() {
                      {isLoadingGoogle ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                      ) : (
-                        <Chrome className="mr-2 h-4 w-4" /> // Using Chrome icon for Google
+                        <Chrome className="mr-2 h-4 w-4" />
                      )}
                      {t('loginPage.googleSignUp')}
                    </Button>
