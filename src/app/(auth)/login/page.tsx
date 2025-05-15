@@ -76,7 +76,9 @@ export default function LoginPage() {
       toast({ title: t('loginPage.loginSuccess'), description: t('loginPage.loginSuccessDesc') });
 
       if (user) {
+        console.log('[Login] Fetching profile for UID:', user.uid);
         const profile = await getUserProfile(user.uid);
+        console.log('[Login] Profile fetched:', profile);
         if (profile && profile.userType === 'recruiter') {
           router.push('/search');
         } else {
@@ -108,13 +110,19 @@ export default function LoginPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const user = userCredential.user;
         if (user) {
-            // Generate CV code only if userType is 'creator'
             const cvCode = values.userType === 'creator' ? generateCvCode() : undefined;
-            await saveUserProfile(user.uid, { email: user.email!, userType: values.userType, cvCode });
+            const userProfileData = { email: user.email!, userType: values.userType, ...(cvCode && { cvCode }) };
+            
+            console.log('[Signup] Attempting to save profile for UID:', user.uid, 'Data:', userProfileData);
+            await saveUserProfile(user.uid, userProfileData);
+            console.log('[Signup] Profile saved successfully for UID:', user.uid);
+
             toast({ title: t('loginPage.signUpSuccess'), description: t('loginPage.signUpSuccessDesc') });
             if (values.userType === 'recruiter') {
+                console.log('[Signup] User is recruiter, redirecting to /search');
                 router.push('/search');
             } else {
+                console.log('[Signup] User is creator, redirecting to /');
                 router.push('/');
             }
         } else {
@@ -131,7 +139,7 @@ export default function LoginPage() {
           console.error('Signup failed: Weak password.', error.message);
           errorMessage = t('loginPage.weakPasswordDesc');
         } else {
-          console.error('Signup failed: An unexpected error occurred.', error);
+          console.error('Signup failed: An unexpected error occurred.', error, 'Error code:', error.code);
         }
 
         toast({
@@ -151,25 +159,35 @@ export default function LoginPage() {
            const result = await signInWithPopup(auth, provider);
            const user = result.user;
            if (user) {
+               console.log('[GoogleSignIn] User signed in/up:', user.uid, user.email);
                let userProfile = await getUserProfile(user.uid);
+               console.log('[GoogleSignIn] Existing profile from Firestore:', userProfile);
+
                if (!userProfile) {
-                   // New user or profile doesn't exist, default to 'creator' and generate CV code
-                   const cvCode = generateCvCode(); // cvCode only for creators
-                   await saveUserProfile(user.uid, { email: user.email!, userType: 'creator', cvCode });
-                   userProfile = { email: user.email!, userType: 'creator', cvCode }; // Update local variable for redirection
+                   console.log('[GoogleSignIn] No existing profile. Creating new creator profile.');
+                   const cvCode = generateCvCode();
+                   const newProfileData = { email: user.email!, userType: 'creator' as 'creator', cvCode };
+                   await saveUserProfile(user.uid, newProfileData);
+                   userProfile = newProfileData; // Update local variable for redirection
+                   console.log('[GoogleSignIn] New creator profile saved:', userProfile);
                } else if (userProfile.userType === 'creator' && !userProfile.cvCode) {
-                  // Existing creator profile missing a CV code
+                  console.log('[GoogleSignIn] Existing creator profile missing CV code. Adding one.');
                   const cvCode = generateCvCode();
-                  await saveUserProfile(user.uid, { ...userProfile, cvCode });
-                  userProfile.cvCode = cvCode;
+                  // Update explicitly to avoid spreading potentially outdated/incomplete userProfile from Firestore
+                  const updatedProfileData = { email: userProfile.email, userType: 'creator' as 'creator', cvCode };
+                  await saveUserProfile(user.uid, updatedProfileData);
+                  userProfile.cvCode = cvCode; // Update local variable
+                  console.log('[GoogleSignIn] CV code added to creator profile.');
+               } else {
+                   console.log('[GoogleSignIn] Existing profile found. Type:', userProfile.userType);
                }
-               // Note: Recruiters signing in via Google who already have a profile will retain their 'recruiter' type
-               // and will not be assigned a cvCode through this flow.
 
                toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
                if (userProfile && userProfile.userType === 'recruiter') {
+                   console.log('[GoogleSignIn] User is recruiter, redirecting to /search');
                    router.push('/search');
                } else {
+                   console.log('[GoogleSignIn] User is creator or default, redirecting to /');
                    router.push('/');
                }
            } else {
@@ -177,7 +195,7 @@ export default function LoginPage() {
                 router.push('/');
            }
        } catch (error: any) {
-           console.error('Google Sign-In failed:', error);
+           console.error('Google Sign-In failed:', error, 'Error Code:', error.code);
            let errorMessage = t('loginPage.googleSignInFailedDesc');
            if (error.code === 'auth/popup-closed-by-user') {
                  errorMessage = t('loginPage.signInCancelledDesc');
