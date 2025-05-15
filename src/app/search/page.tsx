@@ -23,21 +23,44 @@ export default function RecruiterSearchPage() {
   const [isLoadingProfile, setIsLoadingProfile] = React.useState(true);
 
   useEffect(() => {
-    if (!authLoading && !currentUser) {
-      router.push('/login');
-    } else if (currentUser) {
-      // Verify user is a recruiter, otherwise redirect
-      const checkProfile = async () => {
-        setIsLoadingProfile(true);
-        const profile = await getUserProfile(currentUser.uid);
-        if (profile && profile.userType !== 'recruiter') {
-          toast({ title: t('searchPage.accessDenied'), description: t('searchPage.mustBeRecruiter'), variant: 'destructive' });
-          router.push('/'); // Redirect non-recruiters
-        }
-        setIsLoadingProfile(false);
-      };
-      checkProfile();
+    if (authLoading) {
+      setIsLoadingProfile(true); // Keep loading screen while auth is resolving
+      return;
     }
+
+    if (!currentUser) {
+      router.push('/login');
+      return; // Stop further execution if no user
+    }
+
+    // currentUser exists and authLoading is false
+    const checkProfile = async () => {
+      setIsLoadingProfile(true); // Explicitly set loading for this async operation
+      try {
+        const profile = await getUserProfile(currentUser.uid);
+        if (profile && profile.userType === 'recruiter') {
+          // User is a recruiter, allow access.
+          // isLoadingProfile will be set to false in finally.
+        } else {
+          // Not a recruiter, or profile doesn't exist/specify type
+          toast({
+            title: t('searchPage.accessDenied'),
+            description: profile ? t('searchPage.mustBeRecruiter') : "User profile not found or user is not a recruiter.",
+            variant: 'destructive'
+          });
+          router.push('/'); // Redirect
+        }
+      } catch (error) {
+        console.error("Error fetching user profile for search page:", error);
+        toast({ title: "Error", description: "Failed to verify your user role.", variant: 'destructive' });
+        router.push('/'); // Redirect on error
+      } finally {
+        setIsLoadingProfile(false); // Ensure loading state is always updated
+      }
+    };
+
+    checkProfile();
+
   }, [currentUser, authLoading, router, toast, t]);
 
   const handleLogout = async () => {
@@ -67,7 +90,8 @@ export default function RecruiterSearchPage() {
   }
 
   if (!currentUser) {
-    // Should be caught by useEffect, but as a fallback
+    // This case should ideally be handled by the useEffect redirecting before this point,
+    // or by the loading screen if currentUser is null during auth check.
     return <div className="flex justify-center items-center min-h-screen">{t('cvForge.redirectingLogin')}</div>;
   }
 
