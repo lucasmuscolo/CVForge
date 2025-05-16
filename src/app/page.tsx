@@ -27,7 +27,6 @@ import { LogOut, Copy } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-// Removed Card import as it's no longer used for CV code display
 
 
 // Zod Schemas remain the same (no translation needed for validation logic)
@@ -84,6 +83,7 @@ export default function CVForgePage() {
   const { t, locale } = useTranslation();
   const router = useRouter();
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
+  const [initialCvData, setInitialCvData] = useState<CvData>(defaultCvData); // Store initial data for comparison
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -106,7 +106,7 @@ export default function CVForgePage() {
 
 
   useEffect(() => {
-    setIsLoaded(false);
+    setIsLoaded(false); // Reset loaded state when user changes
   }, [currentUser]);
 
   useEffect(() => {
@@ -133,6 +133,7 @@ export default function CVForgePage() {
             } : defaultCvData;
             console.log('[CVForgePage] CV data to set:', cvDataToSet);
             setCvData(cvDataToSet);
+            setInitialCvData(JSON.parse(JSON.stringify(cvDataToSet))); // Deep copy for initial data
             formReset(cvDataToSet);
 
             console.log('[CVForgePage] Fetching user profile for UID:', currentUser.uid);
@@ -142,8 +143,9 @@ export default function CVForgePage() {
 
           } catch (error) {
             console.error("[CVForgePage] Failed to load user data from Firestore:", error);
-            toast({ title: t('cvForge.loadingData'), description: t('cvForge.loadingDataDesc'), variant: "destructive" });
+            toast({ title: t('cvForge.loadingDataError'), description: t('cvForge.loadingDataErrorDesc'), variant: "destructive" });
             setCvData(defaultCvData);
+            setInitialCvData(JSON.parse(JSON.stringify(defaultCvData))); // Reset initial data on error
             formReset(defaultCvData);
             setUserProfile(null);
           } finally {
@@ -160,6 +162,7 @@ export default function CVForgePage() {
       if (!isLoaded) {
         console.log('[CVForgePage] Setting default data as no user is logged in.');
         setCvData(defaultCvData);
+        setInitialCvData(JSON.parse(JSON.stringify(defaultCvData))); // Set initial data for no user
         formReset(defaultCvData);
         setUserProfile(null);
         setIsLoaded(true);
@@ -173,7 +176,7 @@ export default function CVForgePage() {
 
      const subscription = form.watch((value) => {
        const currentData = value as Partial<CvData>;
-       if (currentData && currentData.personalInfo && currentData.experience && currentData.education) {
+       if (currentData && typeof currentData.personalInfo === 'object' && Array.isArray(currentData.experience) && Array.isArray(currentData.education)) {
          const dataForPreview: CvData = {
            personalInfo: { ...defaultCvData.personalInfo, ...currentData.personalInfo },
            experience: currentData.experience.map(exp => ({ ...exp })),
@@ -224,15 +227,24 @@ export default function CVForgePage() {
          skills: Array.isArray(currentFormData.skills) ? currentFormData.skills : [],
        };
 
-      await saveCvData(currentUser.uid, dataToSave);
-      toast({ title: t('cvForge.cvSavedSuccess'), description: t('cvForge.cvSavedSuccessDesc') });
+      // Compare current form data with initial data
+      const hasChanges = JSON.stringify(dataToSave) !== JSON.stringify(initialCvData);
+
+      if (hasChanges) {
+        await saveCvData(currentUser.uid, dataToSave);
+        setInitialCvData(JSON.parse(JSON.stringify(dataToSave))); // Update initial data after save
+        toast({ title: t('cvForge.cvSavedSuccess'), description: t('cvForge.cvSavedSuccessDesc') });
+      } else {
+        toast({ title: t('cvForge.noChangesDetected'), description: t('cvForge.noChangesDetectedDesc') });
+      }
+      
       router.push('/cv/final'); 
 
     } catch (error) {
-      console.error("Failed to save CV data to Firestore:", error);
+      console.error("Failed to save CV data to Firestore or navigate:", error);
       toast({
-        title: t('cvForge.errorSaving'),
-        description: t('cvForge.errorSavingDesc'),
+        title: t('cvForge.errorProcessing'),
+        description: t('cvForge.errorProcessingDesc'),
         variant: "destructive",
       });
     } finally {
