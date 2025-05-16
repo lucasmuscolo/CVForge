@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useForm, type UseFormReturn } from 'react-hook-form';
+import { useForm, type UseFormReturn, type FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
@@ -27,7 +27,7 @@ import { LogOut, Copy } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 
 // Zod Schemas remain the same (no translation needed for validation logic)
@@ -285,7 +285,7 @@ export default function CVForgePage() {
 
   const enhancePersonalInfo = useCallback(
     async (fieldName: keyof PersonalInfo, currentText: string) => {
-        if (fieldName !== 'photoDataUri') {
+        if (fieldName !== 'photoDataUri') { // Ensure photoDataUri is not enhanced
             await enhanceText('personalInfo', `personalInfo.${fieldName}`, currentText || '');
         }
      },
@@ -309,7 +309,7 @@ export default function CVForgePage() {
 
    const isEnhancingPersonalInfo = useCallback(
       (fieldName: keyof PersonalInfo): boolean => {
-        if (fieldName !== 'photoDataUri') {
+        if (fieldName !== 'photoDataUri') { // Check matches enhancePersonalInfo
            return isEnhancing('personalInfo', fieldName);
         }
         return false;
@@ -320,7 +320,8 @@ export default function CVForgePage() {
 
    const isEnhancingExperience = useCallback(
      (index: number, fieldName: keyof ExperienceEntry): boolean => {
-        if (fieldName === 'responsibilities') {
+        // Assuming only 'responsibilities' is enhanceable for experience, as per typical setup
+        if (fieldName === 'responsibilities') { 
              return isEnhancing('experience', fieldName, index);
         }
         return false;
@@ -358,10 +359,7 @@ export default function CVForgePage() {
 
           {userProfile && userProfile.userType === 'creator' && userProfile.cvCode && (
             <Card>
-                <CardHeader className="pb-2 pt-4">
-                    <CardTitle className="text-base font-semibold">{t('cvForge.yourCvCodeLabel')}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex items-center justify-between gap-2 pt-2 pb-4">
+                <CardContent className="flex items-center justify-between gap-2 p-2">
                     <code className="font-mono text-sm p-2 bg-muted rounded-md border border-input flex-grow text-center">{userProfile.cvCode}</code>
                     <Button variant="outline" size="icon" onClick={handleCopyCode} aria-label={t('cvForge.copyCodeButton')}>
                         <Copy className="h-4 w-4" />
