@@ -2,15 +2,15 @@
 // src/app/cv/final/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { CVPreview } from '@/components/cv-forge/CVPreview';
 import type { CvData } from '@/components/cv-forge/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2 } from 'lucide-react'; // Added Loader2
+import { Printer, ArrowLeft, Loader2, Copy } from 'lucide-react'; // Added Copy and Loader2
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
-import { getCvData } from '@/lib/firebase/firestore'; // Import Firestore helper
+import { getCvData, getUserProfile, type UserProfile } from '@/lib/firebase/firestore'; // Import Firestore helpers
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'; // Import LanguageSwitcher
@@ -28,6 +28,7 @@ export default function FinalCVPage() {
   const { t } = useTranslation(); // Get translation function
   const router = useRouter();
   const [cvData, setCvData] = useState<CvData | null>(null); // Start with null to indicate loading
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null); // State for user profile
   const [isLoadingData, setIsLoadingData] = useState(true); // Separate loading state for Firestore data
   const { toast } = useToast();
 
@@ -44,25 +45,31 @@ export default function FinalCVPage() {
     if (currentUser && isLoadingData) { // Only load if user exists and data hasn't been loaded yet
       const loadData = async () => {
         try {
-          const loadedData = await getCvData(currentUser.uid);
-           const dataToSet = loadedData ? {
+          // Load CV Data
+          const loadedCvData = await getCvData(currentUser.uid);
+           const dataToSet = loadedCvData ? {
                 ...defaultCvData, // Ensure all base fields exist
-                ...loadedData,
-                personalInfo: { ...defaultCvData.personalInfo, ...(loadedData.personalInfo || {}) },
-                experience: (loadedData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
-                education: (loadedData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
-                skills: Array.isArray(loadedData.skills) ? loadedData.skills : [],
+                ...loadedCvData,
+                personalInfo: { ...defaultCvData.personalInfo, ...(loadedCvData.personalInfo || {}) },
+                experience: (loadedCvData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
+                education: (loadedCvData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
+                skills: Array.isArray(loadedCvData.skills) ? loadedCvData.skills : [],
             } : defaultCvData; // Use default if no data found in Firestore
-
           setCvData(dataToSet);
+
+          // Load User Profile
+          const loadedUserProfile = await getUserProfile(currentUser.uid);
+          setUserProfile(loadedUserProfile);
+
         } catch (error) {
-          console.error("Failed to load CV data from Firestore:", error);
+          console.error("Failed to load user data from Firestore:", error);
           toast({
             title: t('finalCvPage.errorLoading'),
             description: t('finalCvPage.errorLoadingDesc'),
             variant: "destructive",
           });
            setCvData(defaultCvData); // Set to default on error
+           setUserProfile(null); // Set profile to null on error
         } finally {
           setIsLoadingData(false); // Mark data loading as complete
         }
@@ -71,6 +78,7 @@ export default function FinalCVPage() {
     } else if (!currentUser && !authLoading) {
         // Handle case where user logs out or was never logged in
         setCvData(defaultCvData);
+        setUserProfile(null);
         setIsLoadingData(false);
     }
   }, [currentUser, isLoadingData, toast, authLoading, t]); // Added authLoading and t
@@ -85,6 +93,19 @@ export default function FinalCVPage() {
     router.back();
   };
 
+  const handleCopyCode = useCallback(async () => {
+    if (userProfile && userProfile.userType === 'creator' && userProfile.cvCode) {
+    try {
+        await navigator.clipboard.writeText(userProfile.cvCode);
+        toast({ title: t('cvForge.codeCopied'), description: t('cvForge.codeCopiedDesc') });
+    } catch (err) {
+        console.error('Failed to copy CV code: ', err);
+        toast({ title: t('cvForge.copyFailed'), description: t('cvForge.copyFailedDesc'), variant: 'destructive' });
+    }
+    }
+  }, [userProfile, toast, t]);
+
+
    // Show loading state while checking auth or fetching data
    if (authLoading || isLoadingData) {
      return (
@@ -92,10 +113,11 @@ export default function FinalCVPage() {
            <div className="max-w-4xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
               {/* Skeleton Header */}
               <div className="p-4 flex justify-between items-center border-b">
-                 <Skeleton className="h-10 w-10" />
-                 <div className="flex gap-2">
-                    <Skeleton className="h-10 w-24" />
-                    <Skeleton className="h-10 w-32" />
+                 <Skeleton className="h-10 w-10" /> {/* Back button */}
+                 <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-20" /> {/* Code display */}
+                    <Skeleton className="h-8 w-24" /> {/* Language switcher */}
+                    <Skeleton className="h-10 w-32" /> {/* Print button */}
                  </div>
               </div>
                {/* Skeleton Preview */}
@@ -110,8 +132,8 @@ export default function FinalCVPage() {
                     </div>
                     <Skeleton className="h-20 w-full" /> {/* Summary */}
                     <Skeleton className="h-16 w-full" /> {/* Skills */}
+                    <Skeleton className="h-32 w-full" /> {/* Education before Experience */}
                     <Skeleton className="h-40 w-full" /> {/* Experience */}
-                    <Skeleton className="h-32 w-full" /> {/* Education */}
                </div>
            </div>
         </div>
@@ -139,6 +161,14 @@ export default function FinalCVPage() {
                <span className="sr-only">{t('finalCvPage.back')}</span>
             </Button>
             <div className="flex items-center gap-2">
+                {userProfile && userProfile.userType === 'creator' && userProfile.cvCode && (
+                    <div className="flex items-center gap-1 p-1 border border-input rounded-md bg-card shadow-sm shrink-0">
+                        <code className="font-mono text-xs px-2 py-1 bg-muted rounded-sm">{userProfile.cvCode}</code>
+                        <Button variant="ghost" size="icon" onClick={handleCopyCode} aria-label={t('cvForge.copyCodeButton')} className="h-6 w-6">
+                            <Copy className="h-3 w-3" />
+                        </Button>
+                    </div>
+                )}
                 <LanguageSwitcher />
                 <Button onClick={handlePrint} variant="outline">
                    <Printer className="mr-2 h-4 w-4" />
@@ -155,4 +185,3 @@ export default function FinalCVPage() {
   );
 }
 
-  
