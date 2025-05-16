@@ -3,12 +3,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useForm, type UseFormReturn, type FieldValues, type FieldPath } from 'react-hook-form';
+import { useForm, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation'; // Import useRouter
-import Image from 'next/image';
-import { signOut } from 'firebase/auth'; // Import signOut
+import { useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
 
 import { CVForgeLayout } from '@/components/cv-forge/CVForgeLayout';
 import { PersonalInfoForm } from '@/components/cv-forge/PersonalInfoForm';
@@ -20,14 +19,15 @@ import type { CvData, PersonalInfo, ExperienceEntry, EducationEntry } from '@/co
 import { enhanceResumeLanguage } from '@/ai/flows/enhance-resume-language';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext'; // Import useAuth
-import { auth } from '@/lib/firebase/config'; // Import auth instance
-import { getCvData, saveCvData } from '@/lib/firebase/firestore'; // Import Firestore helpers
-import { Button } from '@/components/ui/button'; // Import Button
-import { LogOut } from 'lucide-react'; // Import LogOut icon
+import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase/config';
+import { getCvData, saveCvData, getUserProfile, type UserProfile } from '@/lib/firebase/firestore';
+import { Button } from '@/components/ui/button';
+import { LogOut, Copy } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'; // Import LanguageSwitcher
+import { useTranslation } from '@/hooks/useTranslation';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 
 // Zod Schemas remain the same (no translation needed for validation logic)
@@ -80,12 +80,13 @@ const defaultCvData: CvData = {
 };
 
 export default function CVForgePage() {
-  const { currentUser, loading: authLoading } = useAuth(); // Get user and loading state
-  const { t, locale } = useTranslation(); // Get translation function and current locale
+  const { currentUser, loading: authLoading } = useAuth();
+  const { t, locale } = useTranslation();
   const router = useRouter();
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
-  const [isLoaded, setIsLoaded] = useState(false); // Tracks if data processing for current auth state is complete
-  const [isSaving, setIsSaving] = useState(false); // Tracks saving state for navigation
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [enhancingState, setEnhancingState] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
@@ -93,11 +94,10 @@ export default function CVForgePage() {
   const form = useForm<CvData>({
     resolver: zodResolver(cvDataSchema),
     defaultValues: defaultCvData,
-    mode: 'onChange', // Keep onChange for live preview updates
+    mode: 'onChange',
   });
-  const { reset: formReset } = form; // Get a stable reference to form.reset
+  const { reset: formReset } = form;
 
-  // Redirect unauthenticated users
   useEffect(() => {
     if (!authLoading && !currentUser) {
       router.push('/login');
@@ -105,59 +105,69 @@ export default function CVForgePage() {
   }, [currentUser, authLoading, router]);
 
 
-  // Effect to reset `isLoaded` to `false` when `currentUser` changes (e.g., on logout or login of a different user).
-  // This ensures the main effect re-evaluates and loads data for the new auth state.
   useEffect(() => {
     setIsLoaded(false);
-  }, [currentUser, setIsLoaded]);
+  }, [currentUser]);
 
-   // Load data from Firestore or set defaults based on auth state
   useEffect(() => {
     if (authLoading) {
-      return; // Wait for auth to settle
+      console.log('[CVForgePage] Auth loading, returning.');
+      return;
     }
 
     if (currentUser) {
-      // User is logged in. Load their data if not already loaded for this user.
+      console.log('[CVForgePage] Current user found:', currentUser.uid, 'isLoaded:', isLoaded);
       if (!isLoaded) {
+        console.log('[CVForgePage] Data not loaded for current user, initiating load.');
         const loadUserData = async () => {
           try {
-            const loadedData = await getCvData(currentUser.uid);
-            const dataToSet = loadedData ? {
+            console.log('[CVForgePage] Fetching CV data for UID:', currentUser.uid);
+            const loadedCvData = await getCvData(currentUser.uid);
+            const cvDataToSet = loadedCvData ? {
                 ...defaultCvData,
-                ...loadedData,
-                personalInfo: { ...defaultCvData.personalInfo, ...(loadedData.personalInfo || {}) },
-                experience: (loadedData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
-                education: (loadedData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
-                skills: Array.isArray(loadedData.skills) ? loadedData.skills : [],
+                ...loadedCvData,
+                personalInfo: { ...defaultCvData.personalInfo, ...(loadedCvData.personalInfo || {}) },
+                experience: (loadedCvData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
+                education: (loadedCvData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
+                skills: Array.isArray(loadedCvData.skills) ? loadedCvData.skills : [],
             } : defaultCvData;
-            
-            setCvData(dataToSet);
-            formReset(dataToSet);
+            console.log('[CVForgePage] CV data to set:', cvDataToSet);
+            setCvData(cvDataToSet);
+            formReset(cvDataToSet);
+
+            console.log('[CVForgePage] Fetching user profile for UID:', currentUser.uid);
+            const loadedUserProfile = await getUserProfile(currentUser.uid);
+            console.log('[CVForgePage] User profile loaded:', loadedUserProfile);
+            setUserProfile(loadedUserProfile);
+
           } catch (error) {
-            console.error("Failed to load CV data from Firestore:", error);
+            console.error("[CVForgePage] Failed to load user data from Firestore:", error);
             toast({ title: t('cvForge.loadingData'), description: t('cvForge.loadingDataDesc'), variant: "destructive" });
             setCvData(defaultCvData);
             formReset(defaultCvData);
+            setUserProfile(null);
           } finally {
-            setIsLoaded(true); // Mark data processing as complete
+            console.log('[CVForgePage] Data loading process finished.');
+            setIsLoaded(true);
           }
         };
         loadUserData();
+      } else {
+        console.log('[CVForgePage] Data already loaded for current user.');
       }
     } else {
-      // No current user (logged out or never logged in)
-      // Set to defaults if not already processed for anonymous state
+      console.log('[CVForgePage] No current user. isLoaded:', isLoaded);
       if (!isLoaded) {
+        console.log('[CVForgePage] Setting default data as no user is logged in.');
         setCvData(defaultCvData);
         formReset(defaultCvData);
-        setIsLoaded(true); // Mark data processing (setting defaults) as complete
+        setUserProfile(null);
+        setIsLoaded(true);
       }
     }
-  }, [currentUser, authLoading, isLoaded, formReset, setCvData, setIsLoaded, toast, t]);
+  }, [currentUser, authLoading, isLoaded, formReset, toast, t]);
 
 
-   // Update preview state on form changes
    useEffect(() => {
      if (!isLoaded) return; 
 
@@ -174,15 +184,13 @@ export default function CVForgePage() {
        }
      });
      return () => subscription.unsubscribe();
-   }, [form, isLoaded, setCvData]); // Removed cvData from deps, ensure setCvData is stable
+   }, [form, isLoaded]);
 
 
-  // --- Logout Handler ---
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await signOut(auth);
       toast({ title: t('loginPage.loggedOut'), description: t('loginPage.loggedOutDesc') });
-      // AuthProvider will handle redirecting to login via its own effect monitoring currentUser
     } catch (error) {
       console.error('Logout failed:', error);
       toast({
@@ -191,9 +199,8 @@ export default function CVForgePage() {
         variant: 'destructive',
       });
     }
-  };
+  }, [toast, t]);
 
-  // --- Save and Navigate Handler ---
   const handleSaveAndNavigate = async () => {
     if (!currentUser) {
         toast({ title: t('cvForge.notLoggedIn'), description: t('cvForge.notLoggedInDesc'), variant: "destructive" });
@@ -234,7 +241,6 @@ export default function CVForgePage() {
   };
 
 
-  // --- AI Enhancement Logic ---
    const getEnhancingKey = (
      section: 'personalInfo' | 'experience' | 'education' | 'skills',
      fieldName: string,
@@ -257,7 +263,7 @@ export default function CVForgePage() {
 
       setEnhancingState(prev => ({ ...prev, [key]: true }));
       try {
-         const result = await enhanceResumeLanguage({ sectionText: currentText, language: locale }); // Pass current locale
+         const result = await enhanceResumeLanguage({ sectionText: currentText, language: locale });
          if (result?.enhancedText) {
            form.setValue(fieldName as any, result.enhancedText, { shouldValidate: true, shouldDirty: true });
            toast({ title: t('aiEnhance.success'), description: t('aiEnhance.successDesc') });
@@ -274,7 +280,7 @@ export default function CVForgePage() {
      } finally {
        setEnhancingState(prev => ({ ...prev, [key]: false }));
      }
-   }, [form, toast, t, locale]); // Added locale to dependencies
+   }, [form, toast, t, locale]);
 
 
   const enhancePersonalInfo = useCallback(
@@ -322,7 +328,19 @@ export default function CVForgePage() {
      [isEnhancing]
    );
 
-   // Memoize components
+    const handleCopyCode = useCallback(async () => {
+        if (userProfile && userProfile.userType === 'creator' && userProfile.cvCode) {
+        try {
+            await navigator.clipboard.writeText(userProfile.cvCode);
+            toast({ title: t('cvForge.codeCopied'), description: t('cvForge.codeCopiedDesc') });
+        } catch (err) {
+            console.error('Failed to copy CV code: ', err);
+            toast({ title: t('cvForge.copyFailed'), description: t('cvForge.copyFailedDesc'), variant: 'destructive' });
+        }
+        }
+    }, [userProfile, toast, t]);
+
+
    const inputSection = useMemo(() => (
        <div className="space-y-6">
          <div className="flex justify-between items-center gap-2">
@@ -337,6 +355,21 @@ export default function CVForgePage() {
              </div>
          </div>
          <p className="text-muted-foreground">{t('cvForge.description')}</p>
+
+          {userProfile && userProfile.userType === 'creator' && userProfile.cvCode && (
+            <Card>
+                <CardHeader className="pb-2 pt-4">
+                    <CardTitle className="text-base font-semibold">{t('cvForge.yourCvCodeLabel')}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center justify-between gap-2 pt-2 pb-4">
+                    <code className="font-mono text-sm p-2 bg-muted rounded-md border border-input flex-grow text-center">{userProfile.cvCode}</code>
+                    <Button variant="outline" size="icon" onClick={handleCopyCode} aria-label={t('cvForge.copyCodeButton')}>
+                        <Copy className="h-4 w-4" />
+                    </Button>
+                </CardContent>
+            </Card>
+         )}
+
          <PersonalInfoForm
              form={form as UseFormReturn<any>}
             enhanceText={enhancePersonalInfo}
@@ -346,7 +379,7 @@ export default function CVForgePage() {
          <EducationForm form={form} />
          <SkillsForm form={form} />
        </div>
-     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser, t, handleLogout]); 
+     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser, t, handleLogout, userProfile, handleCopyCode]); 
 
    const previewSection = useMemo(() => (
        <div className="md:sticky md:top-6 print:static print:top-auto">
@@ -383,7 +416,7 @@ export default function CVForgePage() {
     );
    }
 
-   if (!currentUser && !authLoading) { // If auth is done and still no user, show login redirect message
+   if (!currentUser && !authLoading) {
        return <div className="flex justify-center items-center min-h-screen">{t('cvForge.redirectingLogin')}</div>;
    }
 
@@ -398,6 +431,3 @@ export default function CVForgePage() {
     </>
   );
 }
-
-  
-

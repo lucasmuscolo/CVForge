@@ -17,7 +17,13 @@
     "notLoggedInDesc": "Please log in to save your CV.",
     "loadingData": "Loading Data",
     "loadingDataDesc": "Could not load your CV data from the server.",
-    "redirectingLogin": "Redirecting to login..."
+    "redirectingLogin": "Redirecting to login...",
+    "yourCvCodeLabel": "Your CV Code:",
+    "copyCodeButton": "Copy Code",
+    "codeCopied": "Code Copied!",
+    "codeCopiedDesc": "Your CV code has been copied to the clipboard.",
+    "copyFailed": "Copy Failed",
+    "copyFailedDesc": "Could not copy the code. Please try again or copy manually."
   },
   "loginPage": {
     "login": "Login",

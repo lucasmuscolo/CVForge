@@ -17,7 +17,13 @@
     "notLoggedInDesc": "Por favor, inicia sesión para guardar tu CV.",
     "loadingData": "Error al Cargar Datos",
     "loadingDataDesc": "No se pudieron cargar los datos de tu CV desde el servidor.",
-    "redirectingLogin": "Redirigiendo al inicio de sesión..."
+    "redirectingLogin": "Redirigiendo al inicio de sesión...",
+    "yourCvCodeLabel": "Tu Código de CV:",
+    "copyCodeButton": "Copiar Código",
+    "codeCopied": "¡Código Copiado!",
+    "codeCopiedDesc": "Tu código de CV ha sido copiado al portapapeles.",
+    "copyFailed": "Fallo al Copiar",
+    "copyFailedDesc": "No se pudo copiar el código. Por favor, inténtalo de nuevo o cópialo manualmente."
   },
   "loginPage": {
     "login": "Iniciar Sesión",
