@@ -27,7 +27,7 @@ import { LogOut, Copy } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { Card, CardContent } from '@/components/ui/card';
+// Removed Card import as it's no longer used for CV code display
 
 
 // Zod Schemas remain the same (no translation needed for validation logic)
@@ -344,6 +344,7 @@ export default function CVForgePage() {
 
    const inputSection = useMemo(() => (
        <div className="space-y-6">
+         {/* Row 1: Main Title and Utility Buttons */}
          <div className="flex justify-between items-center gap-2">
             <h1 className="text-2xl font-bold text-primary">{t('cvForge.title')}</h1>
             <div className="flex items-center gap-2">
@@ -355,18 +356,19 @@ export default function CVForgePage() {
               )}
              </div>
          </div>
-         <p className="text-muted-foreground">{t('cvForge.description')}</p>
 
-          {userProfile && userProfile.userType === 'creator' && userProfile.cvCode && (
-            <Card>
-                <CardContent className="flex items-center justify-between gap-2 p-2">
-                    <code className="font-mono text-sm p-2 bg-muted rounded-md border border-input flex-grow text-center">{userProfile.cvCode}</code>
-                    <Button variant="outline" size="icon" onClick={handleCopyCode} aria-label={t('cvForge.copyCodeButton')}>
-                        <Copy className="h-4 w-4" />
-                    </Button>
-                </CardContent>
-            </Card>
-         )}
+         {/* Row 2: Description and CV Code display */}
+         <div className="flex justify-between items-center gap-2">
+             <p className="text-muted-foreground flex-grow">{t('cvForge.description')}</p>
+             {userProfile && userProfile.userType === 'creator' && userProfile.cvCode && (
+                 <div className="flex items-center gap-1 p-1 border border-input rounded-md bg-card shadow-sm shrink-0">
+                     <code className="font-mono text-xs px-2 py-1 bg-muted rounded-sm">{userProfile.cvCode}</code>
+                     <Button variant="ghost" size="icon" onClick={handleCopyCode} aria-label={t('cvForge.copyCodeButton')} className="h-6 w-6">
+                         <Copy className="h-3 w-3" />
+                     </Button>
+                 </div>
+             )}
+         </div>
 
          <PersonalInfoForm
              form={form as UseFormReturn<any>}
