@@ -128,6 +128,29 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
             </section>
           )}
 
+          {/* Education */}
+          {education && education.length > 0 && (
+            <section className="mb-6">
+              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.educationTitle')}</h2>
+              <div className="space-y-4">
+                {education.map((edu) => (
+                  <div key={edu.id} className="break-inside-avoid"> {/* Added break-inside-avoid */}
+                    <div className="flex justify-between items-start mb-1">
+                        <h3 className="text-md font-semibold">{edu.degree || t('cvPreview.degree')}</h3>
+                        <span className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">
+                          {edu.graduationDate || t('cvPreview.graduationDate')}
+                        </span>
+                      </div>
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-sm font-medium">{edu.institution || t('cvPreview.institutionName')}</p>
+                        <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{edu.location || t('cvPreview.location')}</p>
+                    </div>
+                    {edu.details && <p className="text-sm italic text-muted-foreground print:text-black">{edu.details}</p>}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Experience */}
           {experience && experience.length > 0 && (
@@ -154,29 +177,6 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
             </section>
           )}
 
-          {/* Education */}
-          {education && education.length > 0 && (
-            <section>
-              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.educationTitle')}</h2>
-              <div className="space-y-4">
-                {education.map((edu) => (
-                  <div key={edu.id} className="break-inside-avoid"> {/* Added break-inside-avoid */}
-                    <div className="flex justify-between items-start mb-1">
-                        <h3 className="text-md font-semibold">{edu.degree || t('cvPreview.degree')}</h3>
-                        <span className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">
-                          {edu.graduationDate || t('cvPreview.graduationDate')}
-                        </span>
-                      </div>
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="text-sm font-medium">{edu.institution || t('cvPreview.institutionName')}</p>
-                        <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{edu.location || t('cvPreview.location')}</p>
-                    </div>
-                    {edu.details && <p className="text-sm italic text-muted-foreground print:text-black">{edu.details}</p>}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
 
           {/* Placeholder if empty */}
           {!safePersonalInfo.name && safeSkills.length === 0 && (!experience || experience.length === 0) && (!education || education.length === 0) && (
@@ -206,4 +206,3 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
   );
 }
 
-  
