@@ -1,7 +1,7 @@
 
 {
   "cvForge": {
-    "title": "CVForge",
+    "title": "Editor de CVForge",
     "description": "Crea y refina tu CV profesional.",
     "logout": "Cerrar Sesión",
     "saveAndNavigate": "Ver CV Final",
@@ -210,5 +210,38 @@
     "emailNotVerifiedAlertTitle": "Verificación de Correo Requerida",
     "emailNotVerifiedAlertDescRecruiter": "Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación enviado a tu dirección de correo para usar la funcionalidad de búsqueda.",
     "verifyToSearch": "Por favor, verifica tu correo electrónico para usar la función de búsqueda."
+  },
+  "landingPage": {
+    "navLoginSignup": "Acceder / Registrarse",
+    "dashboardNav": "Mi Panel",
+    "heroTitle": "Forja Tu Futuro Profesional, Sin Esfuerzo.",
+    "heroSubtitle": "CVForge te ayuda a construir un CV destacado con inteligencia artificial y a conectar con los mejores reclutadores. Hazte notar, consigue el empleo.",
+    "heroCta": "Comienza Ahora",
+    "heroImageAlt": "Interfaz de la aplicación CVForge mostrando la creación de un currículum.",
+    "creatorsTitle": "Para Buscadores de Empleo y Profesionales",
+    "creatorsSubtitle": "Crea un CV atractivo que te abra puertas a nuevas oportunidades.",
+    "creatorBenefit1Title": "Editor Intuitivo",
+    "creatorBenefit1Desc": "Añade y organiza fácilmente tu información personal, experiencia, educación y habilidades.",
+    "creatorBenefit2Title": "Mejora con IA",
+    "creatorBenefit2Desc": "Obtén sugerencias inteligentes para que tu currículum sea más impactante y profesional.",
+    "creatorBenefit3Title": "Código de CV Compartible",
+    "creatorBenefit3Desc": "Genera un código único para compartir fácilmente tu CV con reclutadores.",
+    "creatorBenefit4Title": "Descarga en PDF",
+    "creatorBenefit4Desc": "Descarga un PDF profesional y listo para imprimir de tu CV en cualquier momento.",
+    "creatorsCta": "Empieza a Crear Tu CV",
+    "creatorsImageAlt": "Un profesional trabajando felizmente en su CV con CVForge.",
+    "recruitersTitle": "Para Reclutadores y Cazatalentos",
+    "recruitersSubtitle": "Descubre candidatos cualificados de forma rápida y eficiente.",
+    "recruiterBenefit1Title": "Búsqueda por Código Único",
+    "recruiterBenefit1Desc": "Accede instantáneamente a los CV de los candidatos utilizando su código CVForge único.",
+    "recruiterBenefit2Title": "Perfiles Verificados",
+    "recruiterBenefit2Desc": "Conecta con candidatos cuyas direcciones de correo electrónico han sido verificadas.",
+    "recruiterBenefit3Title": "Acceso Simplificado",
+    "recruiterBenefit3Desc": "Visualiza CVs profesionales y bien estructurados directamente en la plataforma.",
+    "recruitersCta": "Encuentra Talento Ahora",
+    "recruitersImageAlt": "Un reclutador revisando CVs en la plataforma CVForge.",
+    "footerRights": "Todos los derechos reservados."
   }
 }
+
+    

@@ -1,7 +1,7 @@
 
 {
   "cvForge": {
-    "title": "CVForge",
+    "title": "CVForge Editor",
     "description": "Build and refine your professional CV.",
     "logout": "Logout",
     "saveAndNavigate": "View Final CV",
@@ -210,5 +210,38 @@
     "emailNotVerifiedAlertTitle": "Email Verification Required",
     "emailNotVerifiedAlertDescRecruiter": "Please check your inbox and click the verification link sent to your email address to use the search functionality.",
     "verifyToSearch": "Please verify your email to use the search function."
+  },
+  "landingPage": {
+    "navLoginSignup": "Login / Sign Up",
+    "dashboardNav": "Dashboard",
+    "heroTitle": "Craft Your Professional Future, Effortlessly.",
+    "heroSubtitle": "CVForge helps you build a standout CV with AI-powered insights and connect with top recruiters. Get noticed, get hired.",
+    "heroCta": "Get Started Now",
+    "heroImageAlt": "CVForge application interface showing a resume being built.",
+    "creatorsTitle": "For Job Seekers & Professionals",
+    "creatorsSubtitle": "Create a compelling CV that opens doors to new opportunities.",
+    "creatorBenefit1Title": "Intuitive Editor",
+    "creatorBenefit1Desc": "Easily add and organize your personal info, experience, education, and skills.",
+    "creatorBenefit2Title": "AI Language Enhancement",
+    "creatorBenefit2Desc": "Get smart suggestions to make your resume more impactful and professional.",
+    "creatorBenefit3Title": "Shareable CV Code",
+    "creatorBenefit3Desc": "Generate a unique code to easily share your CV with recruiters.",
+    "creatorBenefit4Title": "PDF Download",
+    "creatorBenefit4Desc": "Download a professional, print-ready PDF of your CV anytime.",
+    "creatorsCta": "Start Building Your CV",
+    "creatorsImageAlt": "A professional happily working on their CV with CVForge.",
+    "recruitersTitle": "For Recruiters & Talent Scouts",
+    "recruitersSubtitle": "Discover qualified candidates quickly and efficiently.",
+    "recruiterBenefit1Title": "Search by Unique Code",
+    "recruiterBenefit1Desc": "Instantly access candidate CVs using their unique CVForge code.",
+    "recruiterBenefit2Title": "Verified Profiles",
+    "recruiterBenefit2Desc": "Connect with candidates whose email addresses have been verified.",
+    "recruiterBenefit3Title": "Streamlined Access",
+    "recruiterBenefit3Desc": "View well-structured, professional CVs directly within the platform.",
+    "recruitersCta": "Find Top Talent",
+    "recruitersImageAlt": "A recruiter reviewing CVs on the CVForge platform.",
+    "footerRights": "All rights reserved."
   }
 }
+
+    

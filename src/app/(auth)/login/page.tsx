@@ -12,7 +12,7 @@ import {
     createUserWithEmailAndPassword,
     GoogleAuthProvider,
     signInWithPopup,
-    sendEmailVerification, // Import sendEmailVerification
+    sendEmailVerification,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { saveUserProfile, getUserProfile } from '@/lib/firebase/firestore';
@@ -82,15 +82,13 @@ export default function LoginPage() {
           toast({
               title: t('loginPage.emailNotVerifiedTitle'),
               description: t('loginPage.loginNeedsVerification'),
-              variant: 'default', // Or 'warning' if you have one
-              duration: 9000, // Longer duration
+              variant: 'default',
+              duration: 9000,
           });
       } else {
           toast({ title: t('loginPage.loginSuccess'), description: t('loginPage.loginSuccessDesc') });
       }
       
-      // Proceed with profile fetching and redirection regardless of verification for now
-      // Destination pages will handle restrictions if email is not verified.
       console.log('[Login] Fetching profile for UID:', user.uid);
       const profile = await getUserProfile(user.uid);
       console.log('[Login] Profile fetched:', profile);
@@ -98,8 +96,8 @@ export default function LoginPage() {
         console.log('[Login] User is recruiter, redirecting to /search');
         router.push('/search');
       } else {
-        console.log('[Login] User is creator or profile not found/default, redirecting to /');
-        router.push('/');
+        console.log('[Login] User is creator or profile not found/default, redirecting to /cv-editor');
+        router.push('/cv-editor');
       }
     } catch (error: any) {
       console.error('[Login] Login failed. Email:', values.email, 'Error:', error, 'Error code:', error.code);
@@ -141,22 +139,15 @@ export default function LoginPage() {
             console.log('[Signup] Profile saved successfully for UID:', user.uid);
 
             toast({ title: t('loginPage.signUpSuccess'), description: t('loginPage.signUpSuccessWithVerificationDesc') });
-            // Do not redirect immediately, let them verify first.
-            // Or redirect to a "please verify your email" page if you have one.
-            // For now, we will redirect to login and they can login after verification.
-            // router.push('/login'); // Or stay on login page with the new tab selected.
             
-            // For now, to allow testing of subsequent steps, we will redirect.
-            // In a real app, you might want to keep them on login or a specific "verify email" page.
             if (values.userType === 'recruiter') {
                 console.log('[Signup] User is recruiter, redirecting to /search (pending verification)');
                 router.push('/search');
             } else {
-                console.log('[Signup] User is creator, redirecting to / (pending verification)');
-                router.push('/');
+                console.log('[Signup] User is creator, redirecting to /cv-editor (pending verification)');
+                router.push('/cv-editor');
             }
         } else {
-            // This case should ideally not be reached if createUserWithEmailAndPassword was successful
             console.error('[Signup] User object was null after successful userCredential. UID:', userCredential.user?.uid);
             throw new Error("User creation failed silently post-credential generation.");
         }
@@ -230,18 +221,16 @@ export default function LoginPage() {
                   toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
                }
                
-               // Proceed with redirection
                if (userProfile && userProfile.userType === 'recruiter') {
                    console.log('[GoogleSignIn] User is recruiter, redirecting to /search');
                    router.push('/search');
                } else {
-                   console.log('[GoogleSignIn] User is creator or default, redirecting to /');
-                   router.push('/');
+                   console.log('[GoogleSignIn] User is creator or default, redirecting to /cv-editor');
+                   router.push('/cv-editor');
                }
            } else {
-                // Fallback, should ideally not be reached if signInWithPopup is successful
                 console.error('[GoogleSignIn] User object was null after successful Google Sign-In.');
-                router.push('/');
+                router.push('/'); // Fallback to landing page
            }
        } catch (error: any) {
            console.error('[GoogleSignIn] Google Sign-In failed:', error, 'Error Code:', error.code);
@@ -457,3 +446,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
