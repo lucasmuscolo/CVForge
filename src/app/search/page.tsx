@@ -140,15 +140,18 @@ export default function RecruiterSearchPage() {
 
     try {
       const userFound = await findUserByCvCode(searchCvCode.trim());
+
+      // Add check: If userFound is null, set message and return
+      if (!userFound) {
+        setSearchMessage(t('cvForge.cvNotFound'));
+        setIsSearching(false);
+        return;
+      }
+
       if (userFound && userFound.userId) {
         const cvData = await getCvData(userFound.userId);
-        if (cvData) {
-          setSearchedCvData(cvData);
-          setSearchMessage('');
-        } else {
-          setSearchedCvData(null);
-          setSearchMessage(t('searchPage.cvNotFound'));
-        }
+        setSearchedCvData(cvData);
+        setSearchMessage(cvData ? '' : t('searchPage.cvNotFound')); // Set message based on cvData existence
       } else {
         setSearchedCvData(null);
         setSearchMessage(t('searchPage.cvCodeNotFound'));
@@ -156,8 +159,9 @@ export default function RecruiterSearchPage() {
     } catch (error) {
       console.error("Error during CV search:", error);
       setSearchedCvData(null);
-      setSearchMessage(t('cvForge.errorSavingDesc')); // Re-use a generic error description
+      setSearchMessage(t('cvForge.searchErrorDesc')); // Use search-specific error description
       toast({ title: t('cvForge.errorSaving'), description: t('cvForge.errorSavingDesc'), variant: 'destructive' });
+      toast({ title: t('cvForge.searchFailedTitle'), description: t('cvForge.searchErrorDesc'), variant: 'destructive' }); // Use search-specific error title and description
     } finally {
       setIsSearching(false);
     }
@@ -252,13 +256,9 @@ export default function RecruiterSearchPage() {
         )}
 
         {!isSearching && searchedCvData === undefined && !searchMessage && isEmailVerified && (
+             // Removed redundant prompt message here as handled by searchMessage state
              <div className="text-center py-10 text-muted-foreground">
-                {t('searchPage.enterCvCodePrompt')}
-             </div>
-        )}
-        {!isSearching && searchedCvData === undefined && !searchMessage && !isEmailVerified && (
-             <div className="text-center py-10 text-muted-foreground">
-                {/* Message handled by the alert */}
+                {/* Message handled by searchMessage state */}
              </div>
         )}
 
