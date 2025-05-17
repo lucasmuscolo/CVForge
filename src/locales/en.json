@@ -27,7 +27,10 @@
     "codeCopied": "Code Copied!",
     "codeCopiedDesc": "Your CV code has been copied to the clipboard.",
     "copyFailed": "Copy Failed",
-    "copyFailedDesc": "Could not copy the code. Please try again or copy manually."
+    "copyFailedDesc": "Could not copy the code. Please try again or copy manually.",
+    "verifyEmailToProceed": "Please verify your email to save or view your final CV.",
+    "emailNotVerifiedAlertTitle": "Email Verification Required",
+    "emailNotVerifiedAlertDescCreator": "Please check your inbox and click the verification link sent to your email address to fully use CVForge."
   },
   "loginPage": {
     "login": "Login",
@@ -51,8 +54,9 @@
     "loginFailed": "Login Failed",
     "loginFailedDesc": "An error occurred. Please check your credentials or try again.",
     "invalidCredentials": "Invalid email or password. Please try again.",
-    "signUpSuccess": "Signup Successful",
-    "signUpSuccessDesc": "Your account has been created. Redirecting...",
+    "tooManyRequests": "Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.",
+    "signUpSuccess": "Signup Successful!",
+    "signUpSuccessWithVerificationDesc": "Please check your email to verify your account before logging in.",
     "signUpFailed": "Signup Failed",
     "signUpFailedDesc": "An error occurred during signup. Please try again.",
     "emailAlreadyInUseDesc": "This email is already in use. Please try a different email or log in.",
@@ -70,7 +74,9 @@
     "logoutFailedDesc": "An error occurred during logout.",
     "userTypeLabel": "How will you use the application?",
     "userTypeCreator": "I'm creating my CV",
-    "userTypeRecruiter": "I'm looking for CVs (Recruiter)"
+    "userTypeRecruiter": "I'm looking for CVs (Recruiter)",
+    "emailNotVerifiedTitle": "Email Not Verified",
+    "loginNeedsVerification": "Please verify your email. Check your inbox for the verification link sent to you."
   },
   "personalInfo": {
     "title": "Personal Information",
@@ -200,6 +206,9 @@
     "cvCodeNotFound": "No user found with this CV code.",
     "enterCvCodePrompt": "Enter an 8-character CV code to search.",
     "cvResultTitle": "CV Search Result",
-    "invalidCvCode": "Please enter a valid 8-character CV code."
+    "invalidCvCode": "Please enter a valid 8-character CV code.",
+    "emailNotVerifiedAlertTitle": "Email Verification Required",
+    "emailNotVerifiedAlertDescRecruiter": "Please check your inbox and click the verification link sent to your email address to use the search functionality.",
+    "verifyToSearch": "Please verify your email to use the search function."
   }
 }

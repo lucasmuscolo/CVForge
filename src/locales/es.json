@@ -27,7 +27,10 @@
     "codeCopied": "¡Código Copiado!",
     "codeCopiedDesc": "Tu código de CV ha sido copiado al portapapeles.",
     "copyFailed": "Fallo al Copiar",
-    "copyFailedDesc": "No se pudo copiar el código. Por favor, inténtalo de nuevo o cópialo manualmente."
+    "copyFailedDesc": "No se pudo copiar el código. Por favor, inténtalo de nuevo o cópialo manualmente.",
+    "verifyEmailToProceed": "Por favor, verifica tu correo electrónico para guardar o ver tu CV final.",
+    "emailNotVerifiedAlertTitle": "Verificación de Correo Requerida",
+    "emailNotVerifiedAlertDescCreator": "Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación enviado a tu dirección de correo para usar CVForge completamente."
   },
   "loginPage": {
     "login": "Iniciar Sesión",
@@ -51,8 +54,9 @@
     "loginFailed": "Fallo en Inicio de Sesión",
     "loginFailedDesc": "Ocurrió un error. Por favor, verifica tus credenciales o inténtalo de nuevo.",
     "invalidCredentials": "Correo electrónico o contraseña incorrectos. Por favor, inténtalo de nuevo.",
-    "signUpSuccess": "Registro Exitoso",
-    "signUpSuccessDesc": "Tu cuenta ha sido creada. Redirigiendo...",
+    "tooManyRequests": "El acceso a esta cuenta ha sido deshabilitado temporalmente debido a muchos intentos fallidos de inicio de sesión. Puedes restaurarlo inmediatamente restableciendo tu contraseña o puedes intentarlo de nuevo más tarde.",
+    "signUpSuccess": "¡Registro Exitoso!",
+    "signUpSuccessWithVerificationDesc": "Por favor, revisa tu correo electrónico para verificar tu cuenta antes de iniciar sesión.",
     "signUpFailed": "Fallo en Registro",
     "signUpFailedDesc": "Ocurrió un error durante el registro. Por favor, inténtalo de nuevo.",
     "emailAlreadyInUseDesc": "Este correo electrónico ya está en uso. Por favor, intenta con un correo diferente o inicia sesión.",
@@ -70,7 +74,9 @@
     "logoutFailedDesc": "Ocurrió un error al cerrar sesión.",
     "userTypeLabel": "¿Cómo usarás la aplicación?",
     "userTypeCreator": "Voy a crear mi currículum",
-    "userTypeRecruiter": "Quiero buscar currículums (Reclutador)"
+    "userTypeRecruiter": "Quiero buscar currículums (Reclutador)",
+    "emailNotVerifiedTitle": "Correo No Verificado",
+    "loginNeedsVerification": "Por favor, verifica tu correo electrónico. Revisa tu bandeja de entrada para el enlace de verificación que te enviamos."
   },
   "personalInfo": {
     "title": "Información Personal",
@@ -200,6 +206,9 @@
     "cvCodeNotFound": "No se encontró ningún usuario con este código de CV.",
     "enterCvCodePrompt": "Ingresa un código de CV de 8 caracteres para buscar.",
     "cvResultTitle": "Resultado de Búsqueda de CV",
-    "invalidCvCode": "Por favor, ingresa un código de CV válido de 8 caracteres."
+    "invalidCvCode": "Por favor, ingresa un código de CV válido de 8 caracteres.",
+    "emailNotVerifiedAlertTitle": "Verificación de Correo Requerida",
+    "emailNotVerifiedAlertDescRecruiter": "Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación enviado a tu dirección de correo para usar la funcionalidad de búsqueda.",
+    "verifyToSearch": "Por favor, verifica tu correo electrónico para usar la función de búsqueda."
   }
 }

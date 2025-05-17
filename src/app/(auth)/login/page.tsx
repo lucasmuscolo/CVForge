@@ -11,10 +11,11 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    sendEmailVerification, // Import sendEmailVerification
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { saveUserProfile, getUserProfile } from '@/lib/firebase/firestore'; // Import getUserProfile
+import { saveUserProfile, getUserProfile } from '@/lib/firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,7 +28,7 @@ import { Loader2, Chrome } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { generateCvCode } from '@/lib/utils'; // Import CV code generator
+import { generateCvCode } from '@/lib/utils';
 
 
 const loginSchema = z.object({
@@ -70,29 +71,43 @@ export default function LoginPage() {
 
   const handleLogin = async (values: LoginFormValues) => {
     setIsLoadingLogin(true);
+    console.log('[Login] Attempting login for email:', values.email);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
-      toast({ title: t('loginPage.loginSuccess'), description: t('loginPage.loginSuccessDesc') });
+      console.log('[Login] signInWithEmailAndPassword successful for UID:', user.uid, 'Email verified:', user.emailVerified);
 
-      if (user) {
-        console.log('[Login] Fetching profile for UID:', user.uid);
-        const profile = await getUserProfile(user.uid);
-        console.log('[Login] Profile fetched:', profile);
-        if (profile && profile.userType === 'recruiter') {
-          router.push('/search');
-        } else {
-          router.push('/');
-        }
+      if (!user.emailVerified) {
+          console.log('[Login] User email not verified:', user.uid);
+          toast({
+              title: t('loginPage.emailNotVerifiedTitle'),
+              description: t('loginPage.loginNeedsVerification'),
+              variant: 'default', // Or 'warning' if you have one
+              duration: 9000, // Longer duration
+          });
       } else {
-        // Fallback, should not happen if signInWithEmailAndPassword was successful
+          toast({ title: t('loginPage.loginSuccess'), description: t('loginPage.loginSuccessDesc') });
+      }
+      
+      // Proceed with profile fetching and redirection regardless of verification for now
+      // Destination pages will handle restrictions if email is not verified.
+      console.log('[Login] Fetching profile for UID:', user.uid);
+      const profile = await getUserProfile(user.uid);
+      console.log('[Login] Profile fetched:', profile);
+      if (profile && profile.userType === 'recruiter') {
+        console.log('[Login] User is recruiter, redirecting to /search');
+        router.push('/search');
+      } else {
+        console.log('[Login] User is creator or profile not found/default, redirecting to /');
         router.push('/');
       }
     } catch (error: any) {
-      console.error('Login failed:', error);
+      console.error('[Login] Login failed. Email:', values.email, 'Error:', error, 'Error code:', error.code);
       let errorMessage = t('loginPage.loginFailedDesc');
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         errorMessage = t('loginPage.invalidCredentials');
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = t('loginPage.tooManyRequests');
       }
       toast({
         title: t('loginPage.loginFailed'),
@@ -101,15 +116,23 @@ export default function LoginPage() {
       });
     } finally {
       setIsLoadingLogin(false);
+      console.log('[Login] Login attempt finished for email:', values.email);
     }
   };
 
   const handleSignup = async (values: SignupFormValues) => {
      setIsLoadingSignup(true);
+     console.log('[Signup] Attempting signup for email:', values.email, 'User type:', values.userType);
      try {
         const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
         const user = userCredential.user;
+        console.log('[Signup] createUserWithEmailAndPassword successful for UID:', user.uid);
+        
         if (user) {
+            console.log('[Signup] Sending email verification for UID:', user.uid);
+            await sendEmailVerification(user);
+            console.log('[Signup] Email verification sent for UID:', user.uid);
+
             const cvCode = values.userType === 'creator' ? generateCvCode() : undefined;
             const userProfileData = { email: user.email!, userType: values.userType, ...(cvCode && { cvCode }) };
             
@@ -117,29 +140,39 @@ export default function LoginPage() {
             await saveUserProfile(user.uid, userProfileData);
             console.log('[Signup] Profile saved successfully for UID:', user.uid);
 
-            toast({ title: t('loginPage.signUpSuccess'), description: t('loginPage.signUpSuccessDesc') });
+            toast({ title: t('loginPage.signUpSuccess'), description: t('loginPage.signUpSuccessWithVerificationDesc') });
+            // Do not redirect immediately, let them verify first.
+            // Or redirect to a "please verify your email" page if you have one.
+            // For now, we will redirect to login and they can login after verification.
+            // router.push('/login'); // Or stay on login page with the new tab selected.
+            
+            // For now, to allow testing of subsequent steps, we will redirect.
+            // In a real app, you might want to keep them on login or a specific "verify email" page.
             if (values.userType === 'recruiter') {
-                console.log('[Signup] User is recruiter, redirecting to /search');
+                console.log('[Signup] User is recruiter, redirecting to /search (pending verification)');
                 router.push('/search');
             } else {
-                console.log('[Signup] User is creator, redirecting to /');
+                console.log('[Signup] User is creator, redirecting to / (pending verification)');
                 router.push('/');
             }
         } else {
-            throw new Error("User creation failed silently.");
+            // This case should ideally not be reached if createUserWithEmailAndPassword was successful
+            console.error('[Signup] User object was null after successful userCredential. UID:', userCredential.user?.uid);
+            throw new Error("User creation failed silently post-credential generation.");
         }
-     } catch (error: any) {
+     } catch (error: any)
+      {
         let errorTitle = t('loginPage.signUpFailed');
         let errorMessage = t('loginPage.signUpFailedDesc');
 
         if (error.code === 'auth/email-already-in-use') {
-          console.error('Signup failed: Email already in use.', error.message);
+          console.error('[Signup] Signup failed: Email already in use.', error.message, 'Email:', values.email);
           errorMessage = t('loginPage.emailAlreadyInUseDesc');
         } else if (error.code === 'auth/weak-password') {
-          console.error('Signup failed: Weak password.', error.message);
+          console.error('[Signup] Signup failed: Weak password.', error.message, 'Email:', values.email);
           errorMessage = t('loginPage.weakPasswordDesc');
         } else {
-          console.error('Signup failed: An unexpected error occurred.', error, 'Error code:', error.code);
+          console.error('[Signup] Signup failed: An unexpected error occurred.', error, 'Error code:', error.code, 'Email:', values.email);
         }
 
         toast({
@@ -149,15 +182,19 @@ export default function LoginPage() {
         });
      } finally {
         setIsLoadingSignup(false);
+        console.log('[Signup] Signup attempt finished for email:', values.email);
      }
    };
 
    const handleGoogleSignIn = async () => {
        setIsLoadingGoogle(true);
        const provider = new GoogleAuthProvider();
+       console.log('[GoogleSignIn] Attempting Google Sign-In.');
        try {
            const result = await signInWithPopup(auth, provider);
            const user = result.user;
+           console.log('[GoogleSignIn] signInWithPopup successful for UID:', user.uid, 'Email verified:', user.emailVerified);
+           
            if (user) {
                console.log('[GoogleSignIn] User signed in/up:', user.uid, user.email);
                let userProfile = await getUserProfile(user.uid);
@@ -168,21 +205,32 @@ export default function LoginPage() {
                    const cvCode = generateCvCode();
                    const newProfileData = { email: user.email!, userType: 'creator' as 'creator', cvCode };
                    await saveUserProfile(user.uid, newProfileData);
-                   userProfile = newProfileData; // Update local variable for redirection
+                   userProfile = newProfileData; 
                    console.log('[GoogleSignIn] New creator profile saved:', userProfile);
                } else if (userProfile.userType === 'creator' && !userProfile.cvCode) {
                   console.log('[GoogleSignIn] Existing creator profile missing CV code. Adding one.');
                   const cvCode = generateCvCode();
-                  // Update explicitly to avoid spreading potentially outdated/incomplete userProfile from Firestore
                   const updatedProfileData = { email: userProfile.email, userType: 'creator' as 'creator', cvCode };
                   await saveUserProfile(user.uid, updatedProfileData);
-                  userProfile.cvCode = cvCode; // Update local variable
+                  userProfile.cvCode = cvCode; 
                   console.log('[GoogleSignIn] CV code added to creator profile.');
                } else {
                    console.log('[GoogleSignIn] Existing profile found. Type:', userProfile.userType);
                }
 
-               toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
+               if (!user.emailVerified) {
+                   console.log('[GoogleSignIn] User email not verified for UID (Google):', user.uid);
+                   toast({
+                       title: t('loginPage.emailNotVerifiedTitle'),
+                       description: t('loginPage.loginNeedsVerification'),
+                       variant: 'default',
+                       duration: 9000,
+                   });
+               } else {
+                  toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
+               }
+               
+               // Proceed with redirection
                if (userProfile && userProfile.userType === 'recruiter') {
                    console.log('[GoogleSignIn] User is recruiter, redirecting to /search');
                    router.push('/search');
@@ -192,10 +240,11 @@ export default function LoginPage() {
                }
            } else {
                 // Fallback, should ideally not be reached if signInWithPopup is successful
+                console.error('[GoogleSignIn] User object was null after successful Google Sign-In.');
                 router.push('/');
            }
        } catch (error: any) {
-           console.error('Google Sign-In failed:', error, 'Error Code:', error.code);
+           console.error('[GoogleSignIn] Google Sign-In failed:', error, 'Error Code:', error.code);
            let errorMessage = t('loginPage.googleSignInFailedDesc');
            if (error.code === 'auth/popup-closed-by-user') {
                  errorMessage = t('loginPage.signInCancelledDesc');
@@ -221,6 +270,7 @@ export default function LoginPage() {
             }
        } finally {
            setIsLoadingGoogle(false);
+           console.log('[GoogleSignIn] Google Sign-In attempt finished.');
        }
    };
 

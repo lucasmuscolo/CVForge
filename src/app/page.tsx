@@ -23,8 +23,9 @@ import { useAuth } from '@/context/AuthContext';
 import { auth } from '@/lib/firebase/config';
 import { getCvData, saveCvData, getUserProfile, type UserProfile } from '@/lib/firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { LogOut, Copy } from 'lucide-react';
+import { LogOut, Copy, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert components
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
@@ -83,10 +84,11 @@ export default function CVForgePage() {
   const { t, locale } = useTranslation();
   const router = useRouter();
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
-  const [initialCvData, setInitialCvData] = useState<CvData>(defaultCvData); // Store initial data for comparison
+  const [initialCvData, setInitialCvData] = useState<CvData>(defaultCvData);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [enhancingState, setEnhancingState] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
@@ -101,12 +103,14 @@ export default function CVForgePage() {
   useEffect(() => {
     if (!authLoading && !currentUser) {
       router.push('/login');
+    } else if (currentUser) {
+      setIsEmailVerified(currentUser.emailVerified);
     }
   }, [currentUser, authLoading, router]);
 
 
   useEffect(() => {
-    setIsLoaded(false); // Reset loaded state when user changes
+    setIsLoaded(false); 
   }, [currentUser]);
 
   useEffect(() => {
@@ -117,6 +121,7 @@ export default function CVForgePage() {
 
     if (currentUser) {
       console.log('[CVForgePage] Current user found:', currentUser.uid, 'isLoaded:', isLoaded);
+      setIsEmailVerified(currentUser.emailVerified); // Update email verification status
       if (!isLoaded) {
         console.log('[CVForgePage] Data not loaded for current user, initiating load.');
         const loadUserData = async () => {
@@ -133,7 +138,7 @@ export default function CVForgePage() {
             } : defaultCvData;
             console.log('[CVForgePage] CV data to set:', cvDataToSet);
             setCvData(cvDataToSet);
-            setInitialCvData(JSON.parse(JSON.stringify(cvDataToSet))); // Deep copy for initial data
+            setInitialCvData(JSON.parse(JSON.stringify(cvDataToSet))); 
             formReset(cvDataToSet);
 
             console.log('[CVForgePage] Fetching user profile for UID:', currentUser.uid);
@@ -145,7 +150,7 @@ export default function CVForgePage() {
             console.error("[CVForgePage] Failed to load user data from Firestore:", error);
             toast({ title: t('cvForge.loadingDataError'), description: t('cvForge.loadingDataErrorDesc'), variant: "destructive" });
             setCvData(defaultCvData);
-            setInitialCvData(JSON.parse(JSON.stringify(defaultCvData))); // Reset initial data on error
+            setInitialCvData(JSON.parse(JSON.stringify(defaultCvData))); 
             formReset(defaultCvData);
             setUserProfile(null);
           } finally {
@@ -162,9 +167,10 @@ export default function CVForgePage() {
       if (!isLoaded) {
         console.log('[CVForgePage] Setting default data as no user is logged in.');
         setCvData(defaultCvData);
-        setInitialCvData(JSON.parse(JSON.stringify(defaultCvData))); // Set initial data for no user
+        setInitialCvData(JSON.parse(JSON.stringify(defaultCvData))); 
         formReset(defaultCvData);
         setUserProfile(null);
+        setIsEmailVerified(false);
         setIsLoaded(true);
       }
     }
@@ -210,6 +216,11 @@ export default function CVForgePage() {
         return;
     }
 
+    if (userProfile?.userType === 'creator' && !isEmailVerified) {
+        toast({ title: t('cvForge.emailNotVerifiedTitle'), description: t('cvForge.verifyEmailToProceed'), variant: "destructive" });
+        return;
+    }
+
     setIsSaving(true); 
     try {
         const isValid = await form.trigger();
@@ -227,12 +238,11 @@ export default function CVForgePage() {
          skills: Array.isArray(currentFormData.skills) ? currentFormData.skills : [],
        };
 
-      // Compare current form data with initial data
       const hasChanges = JSON.stringify(dataToSave) !== JSON.stringify(initialCvData);
 
       if (hasChanges) {
         await saveCvData(currentUser.uid, dataToSave);
-        setInitialCvData(JSON.parse(JSON.stringify(dataToSave))); // Update initial data after save
+        setInitialCvData(JSON.parse(JSON.stringify(dataToSave))); 
         toast({ title: t('cvForge.cvSavedSuccess'), description: t('cvForge.cvSavedSuccessDesc') });
       } else {
         toast({ title: t('cvForge.noChangesDetected'), description: t('cvForge.noChangesDetectedDesc') });
@@ -297,7 +307,7 @@ export default function CVForgePage() {
 
   const enhancePersonalInfo = useCallback(
     async (fieldName: keyof PersonalInfo, currentText: string) => {
-        if (fieldName !== 'photoDataUri') { // Ensure photoDataUri is not enhanced
+        if (fieldName !== 'photoDataUri') { 
             await enhanceText('personalInfo', `personalInfo.${fieldName}`, currentText || '');
         }
      },
@@ -321,7 +331,7 @@ export default function CVForgePage() {
 
    const isEnhancingPersonalInfo = useCallback(
       (fieldName: keyof PersonalInfo): boolean => {
-        if (fieldName !== 'photoDataUri') { // Check matches enhancePersonalInfo
+        if (fieldName !== 'photoDataUri') { 
            return isEnhancing('personalInfo', fieldName);
         }
         return false;
@@ -332,7 +342,6 @@ export default function CVForgePage() {
 
    const isEnhancingExperience = useCallback(
      (index: number, fieldName: keyof ExperienceEntry): boolean => {
-        // Assuming only 'responsibilities' is enhanceable for experience, as per typical setup
         if (fieldName === 'responsibilities') { 
              return isEnhancing('experience', fieldName, index);
         }
@@ -382,6 +391,18 @@ export default function CVForgePage() {
              )}
          </div>
 
+        {/* Email Verification Alert for Creators */}
+        {currentUser && userProfile?.userType === 'creator' && !isEmailVerified && (
+            <Alert variant="default" className="border-yellow-500 bg-yellow-50 text-yellow-700">
+                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                <AlertTitle className="font-semibold text-yellow-800">{t('cvForge.emailNotVerifiedAlertTitle')}</AlertTitle>
+                <AlertDescription>
+                    {t('cvForge.emailNotVerifiedAlertDescCreator')}
+                </AlertDescription>
+            </Alert>
+        )}
+
+
          <PersonalInfoForm
              form={form as UseFormReturn<any>}
             enhanceText={enhancePersonalInfo}
@@ -391,7 +412,8 @@ export default function CVForgePage() {
          <EducationForm form={form} />
          <SkillsForm form={form} />
        </div>
-     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser, t, handleLogout, userProfile, handleCopyCode]); 
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser, t, handleLogout, userProfile, handleCopyCode, isEmailVerified]); 
 
    const previewSection = useMemo(() => (
        <div className="md:sticky md:top-6 print:static print:top-auto">
@@ -401,9 +423,11 @@ export default function CVForgePage() {
              onViewFinalClick={handleSaveAndNavigate} 
              isSaving={isSaving} 
              showFinalButton={true} 
+             isEmailVerified={userProfile?.userType === 'creator' ? isEmailVerified : true} // Pass verification status for button state
            />
        </div>
-   ), [cvData, isSaving, t, handleSaveAndNavigate]); 
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+   ), [cvData, isSaving, t, handleSaveAndNavigate, isEmailVerified, userProfile?.userType]); 
 
 
    if (authLoading || (!isLoaded && currentUser)) {
@@ -415,6 +439,8 @@ export default function CVForgePage() {
                     <Skeleton className="h-8 w-24" />
                 </div>
                 <Skeleton className="h-6 w-48" />
+                {/* Added skeleton for potential alert */}
+                <Skeleton className="h-16 w-full" /> 
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-80 w-full" />
                 <Skeleton className="h-56 w-full" />
