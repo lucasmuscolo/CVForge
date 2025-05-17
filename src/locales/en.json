@@ -217,7 +217,7 @@
     "heroTitle": "Craft Your Professional Future, Effortlessly.",
     "heroSubtitle": "CVForge helps you build a standout CV with AI-powered insights and connect with top recruiters. Get noticed, get hired.",
     "heroCta": "Get Started Now",
-    "heroImageAlt": "CVForge application interface showing a resume being built.",
+    "heroLogoAlt": "CVForge Application Logo",
     "creatorsTitle": "For Job Seekers & Professionals",
     "creatorsSubtitle": "Create a compelling CV that opens doors to new opportunities.",
     "creatorBenefit1Title": "Intuitive Editor",
@@ -229,7 +229,7 @@
     "creatorBenefit4Title": "PDF Download",
     "creatorBenefit4Desc": "Download a professional, print-ready PDF of your CV anytime.",
     "creatorsCta": "Start Building Your CV",
-    "creatorsImageAlt": "A professional happily working on their CV with CVForge.",
+    "creatorsImageAlt": "Screenshot of CVForge editor interface.",
     "recruitersTitle": "For Recruiters & Talent Scouts",
     "recruitersSubtitle": "Discover qualified candidates quickly and efficiently.",
     "recruiterBenefit1Title": "Search by Unique Code",
@@ -239,9 +239,7 @@
     "recruiterBenefit3Title": "Streamlined Access",
     "recruiterBenefit3Desc": "View well-structured, professional CVs directly within the platform.",
     "recruitersCta": "Find Top Talent",
-    "recruitersImageAlt": "A recruiter reviewing CVs on the CVForge platform.",
+    "recruitersImageAlt": "Screenshot of CVForge recruiter search interface.",
     "footerRights": "All rights reserved."
   }
 }
-
-    

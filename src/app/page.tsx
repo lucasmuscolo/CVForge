@@ -74,12 +74,11 @@ export default function LandingPage() {
             <div className="mt-16 relative">
               <div className="absolute inset-0 bg-black opacity-10 rounded-lg transform skew-y-1"></div> {/* Shadow Effect */}
               <Image
-                src="https://placehold.co/1000x500.png" 
-                alt={t('landingPage.heroImageAlt')}
-                width={1000}
-                height={500}
-                className="rounded-lg shadow-2xl mx-auto relative"
-                data-ai-hint="resume builder interface"
+                src="/CVForge-Logo.jpeg" 
+                alt={t('landingPage.heroLogoAlt')}
+                width={500}
+                height={150}
+                className="rounded-lg shadow-2xl mx-auto relative object-contain"
                 priority
               />
             </div>
@@ -101,12 +100,11 @@ export default function LandingPage() {
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-accent to-teal-600 rounded-lg blur opacity-50 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
                 <Image
-                  src="https://placehold.co/600x400.png"
+                  src="/captura-cv.png"
                   alt={t('landingPage.creatorsImageAlt')}
                   width={600}
                   height={400}
-                  className="rounded-lg shadow-xl relative"
-                  data-ai-hint="person editing resume"
+                  className="rounded-lg shadow-xl relative object-contain"
                 />
               </div>
               <div className="space-y-8">
@@ -169,12 +167,11 @@ export default function LandingPage() {
               <div className="md:order-first relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-blue-700 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
                 <Image
-                  src="https://placehold.co/600x450.png"
+                  src="/captura-busqueda.png"
                   alt={t('landingPage.recruitersImageAlt')}
                   width={600}
                   height={450}
-                  className="rounded-lg shadow-xl relative"
-                  data-ai-hint="recruiter analyzing profiles"
+                  className="rounded-lg shadow-xl relative object-contain"
                 />
               </div>
             </div>
@@ -191,5 +188,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    
