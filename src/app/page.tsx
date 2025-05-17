@@ -71,17 +71,7 @@ export default function LandingPage() {
             >
               {t('landingPage.heroCta')}
             </Button>
-            <div className="mt-16 relative">
-              <div className="absolute inset-0 bg-black opacity-10 rounded-lg transform skew-y-1"></div> {/* Shadow Effect */}
-              <Image
-                src="/CVForge-Logo.jpeg" 
-                alt={t('landingPage.heroLogoAlt')}
-                width={500}
-                height={150}
-                className="rounded-lg shadow-2xl mx-auto relative object-contain"
-                priority
-              />
-            </div>
+            {/* Image removed from here */}
           </div>
         </section>
 

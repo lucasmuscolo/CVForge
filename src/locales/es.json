@@ -217,7 +217,6 @@
     "heroTitle": "Forja Tu Futuro Profesional, Sin Esfuerzo.",
     "heroSubtitle": "CVForge te ayuda a construir un CV destacado con inteligencia artificial y a conectar con los mejores reclutadores. Hazte notar, consigue el empleo.",
     "heroCta": "Comienza Ahora",
-    "heroLogoAlt": "Logo de la Aplicación CVForge",
     "creatorsTitle": "Para Buscadores de Empleo y Profesionales",
     "creatorsSubtitle": "Crea un CV atractivo que te abra puertas a nuevas oportunidades.",
     "creatorBenefit1Title": "Editor Intuitivo",
@@ -229,7 +228,7 @@
     "creatorBenefit4Title": "Descarga en PDF",
     "creatorBenefit4Desc": "Descarga un PDF profesional y listo para imprimir de tu CV en cualquier momento.",
     "creatorsCta": "Empieza a Crear Tu CV",
-    "creatorsImageAlt": "Captura de pantalla de la interfaz del editor de CVForge.",
+    "creatorsImageAlt": "Captura de pantalla de la interfaz del editor de CVForge mostrando un CV siendo editado.",
     "recruitersTitle": "Para Reclutadores y Cazatalentos",
     "recruitersSubtitle": "Descubre candidatos cualificados de forma rápida y eficiente.",
     "recruiterBenefit1Title": "Búsqueda por Código Único",
@@ -239,7 +238,7 @@
     "recruiterBenefit3Title": "Acceso Simplificado",
     "recruiterBenefit3Desc": "Visualiza CVs profesionales y bien estructurados directamente en la plataforma.",
     "recruitersCta": "Encuentra Talento Ahora",
-    "recruitersImageAlt": "Captura de pantalla de la interfaz de búsqueda de reclutadores de CVForge.",
+    "recruitersImageAlt": "Captura de pantalla de la interfaz de búsqueda para reclutadores de CVForge mostrando una barra de búsqueda.",
     "footerRights": "Todos los derechos reservados."
   }
 }
