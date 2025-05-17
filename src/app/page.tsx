@@ -157,7 +157,7 @@ export default function LandingPage() {
               <div className="md:order-first relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-blue-700 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
                 <Image
-                  src="/captura-busqueda.png"
+                  src="/captura-buqueda.png"
                   alt={t('landingPage.recruitersImageAlt')}
                   width={600}
                   height={450}
