@@ -30,7 +30,9 @@
     "copyFailedDesc": "Could not copy the code. Please try again or copy manually.",
     "verifyEmailToProceed": "Please verify your email to save or view your final CV.",
     "emailNotVerifiedAlertTitle": "Email Verification Required",
-    "emailNotVerifiedAlertDescCreator": "Please check your inbox and click the verification link sent to your email address to fully use CVForge."
+    "emailNotVerifiedAlertDescCreator": "Please check your inbox and click the verification link sent to your email address to fully use CVForge.",
+    "searchFailedTitle": "Search Failed",
+    "searchErrorDesc": "An error occurred while searching for the CV. Please try again."
   },
   "loginPage": {
     "login": "Login",
@@ -193,14 +195,22 @@
     "searchByCvCodePlaceholder": "Enter 8-character CV code",
     "searchButton": "Search",
     "searching": "Searching...",
-    "cvNotFound": "No CV found for this code.",
+    "cvNotFound": "No CV found for this user code.",
     "cvCodeNotFound": "No user found with this CV code.",
+    "cvDataNotFoundForUser": "User found, but no CV data is available for them.",
     "enterCvCodePrompt": "Enter an 8-character CV code to search.",
     "cvResultTitle": "CV Search Result",
     "invalidCvCode": "Please enter a valid 8-character CV code.",
     "emailNotVerifiedAlertTitle": "Email Verification Required",
     "emailNotVerifiedAlertDescRecruiter": "Please check your inbox and click the verification link sent to your email address to use the search functionality.",
-    "verifyToSearch": "Please verify your email to use the search function."
+    "verifyToSearch": "Please verify your email to use the search function.",
+    "downloadMarkdownButton": "Download Markdown",
+    "noCvToDownload": "No CV to Download",
+    "searchFirstToDownload": "Please search for a CV first to download its Markdown version.",
+    "downloadInitiated": "Download Initiated",
+    "markdownDownloaded": "The Markdown version of the CV should be downloading.",
+    "downloadError": "Download Error",
+    "markdownDownloadErrorDesc": "An error occurred while trying to download the Markdown CV."
   },
   "landingPage": {
     "navLoginSignup": "Login / Sign Up",
@@ -233,5 +243,3 @@
     "footerRights": "All rights reserved."
   }
 }
-
-    

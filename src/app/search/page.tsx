@@ -11,7 +11,7 @@ import { CVPreview } from '@/components/cv-forge/CVPreview';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogOut, Search, Loader2, AlertTriangle } from 'lucide-react'; // Added AlertTriangle
+import { LogOut, Search, Loader2, AlertTriangle, Download } from 'lucide-react'; // Added AlertTriangle & Download
 import { auth } from '@/lib/firebase/config';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,7 @@ import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert components
+import { cvDataToMarkdown } from '@/lib/utils'; // Import the new utility
 
 const performLogout = async (authInstance: typeof auth, toastFn: ReturnType<typeof useToast>['toast'], tFn: ReturnType<typeof useTranslation>['t']) => {
   try {
@@ -143,27 +144,51 @@ export default function RecruiterSearchPage() {
 
       // Add check: If userFound is null, set message and return
       if (!userFound) {
-        setSearchMessage(t('cvForge.cvNotFound'));
+        setSearchMessage(t('searchPage.cvCodeNotFound')); // Use specific message for CV code not found
+        setSearchedCvData(null); // Ensure data is cleared
         setIsSearching(false);
         return;
       }
 
-      if (userFound && userFound.userId) {
-        const cvData = await getCvData(userFound.userId);
-        setSearchedCvData(cvData);
-        setSearchMessage(cvData ? '' : t('searchPage.cvNotFound')); // Set message based on cvData existence
+      // userFound exists, so userId should be valid
+      const cvData = await getCvData(userFound.userId);
+      setSearchedCvData(cvData);
+      if (!cvData) {
+        setSearchMessage(t('searchPage.cvDataNotFoundForUser')); // New message if user found but no CV data
       } else {
-        setSearchedCvData(null);
-        setSearchMessage(t('searchPage.cvCodeNotFound'));
+        setSearchMessage(''); // Clear message on success
       }
     } catch (error) {
       console.error("Error during CV search:", error);
       setSearchedCvData(null);
-      setSearchMessage(t('cvForge.searchErrorDesc')); // Use search-specific error description
-      toast({ title: t('cvForge.errorSaving'), description: t('cvForge.errorSavingDesc'), variant: 'destructive' });
-      toast({ title: t('cvForge.searchFailedTitle'), description: t('cvForge.searchErrorDesc'), variant: 'destructive' }); // Use search-specific error title and description
+      setSearchMessage(t('cvForge.searchErrorDesc'));
+      toast({ title: t('cvForge.searchFailedTitle'), description: t('cvForge.searchErrorDesc'), variant: 'destructive' });
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleDownloadMarkdown = () => {
+    if (!searchedCvData) {
+      toast({ title: t('searchPage.noCvToDownload'), description: t('searchPage.searchFirstToDownload'), variant: "destructive" });
+      return;
+    }
+    try {
+      const markdown = cvDataToMarkdown(searchedCvData);
+      const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const fileNameBase = searchedCvData.personalInfo?.name?.replace(/\s+/g, '_')?.toLowerCase() || 'cv';
+      link.download = `${fileNameBase}_export.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({ title: t('searchPage.downloadInitiated'), description: t('searchPage.markdownDownloaded') });
+    } catch (error) {
+      console.error("Error generating or downloading Markdown:", error);
+      toast({ title: t('searchPage.downloadError'), description: t('searchPage.markdownDownloadErrorDesc'), variant: "destructive" });
     }
   };
 
@@ -256,17 +281,20 @@ export default function RecruiterSearchPage() {
         )}
 
         {!isSearching && searchedCvData === undefined && !searchMessage && isEmailVerified && (
-             // Removed redundant prompt message here as handled by searchMessage state
              <div className="text-center py-10 text-muted-foreground">
-                {/* Message handled by searchMessage state */}
+                {/* Prompt to enter code is handled by validation or if searchMessage is set */}
              </div>
         )}
 
 
         {!isSearching && searchedCvData && isEmailVerified && (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex justify-between items-center">
               <CardTitle>{t('searchPage.cvResultTitle')}</CardTitle>
+              <Button onClick={handleDownloadMarkdown} variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                {t('searchPage.downloadMarkdownButton')}
+              </Button>
             </CardHeader>
             <CardContent>
               <CVPreview data={searchedCvData} showFinalButton={false} />

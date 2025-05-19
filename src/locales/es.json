@@ -30,7 +30,9 @@
     "copyFailedDesc": "No se pudo copiar el código. Por favor, inténtalo de nuevo o cópialo manualmente.",
     "verifyEmailToProceed": "Por favor, verifica tu correo electrónico para guardar o ver tu CV final.",
     "emailNotVerifiedAlertTitle": "Verificación de Correo Requerida",
-    "emailNotVerifiedAlertDescCreator": "Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación enviado a tu dirección de correo para usar CVForge completamente."
+    "emailNotVerifiedAlertDescCreator": "Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación enviado a tu dirección de correo para usar CVForge completamente.",
+    "searchFailedTitle": "Falló la Búsqueda",
+    "searchErrorDesc": "Ocurrió un error al buscar el CV. Por favor, inténtalo de nuevo."
   },
   "loginPage": {
     "login": "Iniciar Sesión",
@@ -193,14 +195,22 @@
     "searchByCvCodePlaceholder": "Ingresa código de CV de 8 caracteres",
     "searchButton": "Buscar",
     "searching": "Buscando...",
-    "cvNotFound": "No se encontró ningún CV para este código.",
+    "cvNotFound": "No se encontró ningún CV para este código de usuario.",
     "cvCodeNotFound": "No se encontró ningún usuario con este código de CV.",
+    "cvDataNotFoundForUser": "Usuario encontrado, pero no hay datos de CV disponibles para él.",
     "enterCvCodePrompt": "Ingresa un código de CV de 8 caracteres para buscar.",
     "cvResultTitle": "Resultado de Búsqueda de CV",
     "invalidCvCode": "Por favor, ingresa un código de CV válido de 8 caracteres.",
     "emailNotVerifiedAlertTitle": "Verificación de Correo Requerida",
     "emailNotVerifiedAlertDescRecruiter": "Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación enviado a tu dirección de correo para usar la funcionalidad de búsqueda.",
-    "verifyToSearch": "Por favor, verifica tu correo electrónico para usar la función de búsqueda."
+    "verifyToSearch": "Por favor, verifica tu correo electrónico para usar la función de búsqueda.",
+    "downloadMarkdownButton": "Descargar Markdown",
+    "noCvToDownload": "No hay CV para Descargar",
+    "searchFirstToDownload": "Por favor, busca un CV primero para descargar su versión Markdown.",
+    "downloadInitiated": "Descarga Iniciada",
+    "markdownDownloaded": "La versión Markdown del CV debería estar descargándose.",
+    "downloadError": "Error de Descarga",
+    "markdownDownloadErrorDesc": "Ocurrió un error al intentar descargar el CV en Markdown."
   },
   "landingPage": {
     "navLoginSignup": "Acceder / Registrarse",
@@ -233,5 +243,3 @@
     "footerRights": "Todos los derechos reservados."
   }
 }
-
-    
