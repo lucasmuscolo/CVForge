@@ -43,12 +43,10 @@
     "passwordPlaceholder": "Tu contraseña",
     "loginButton": "Iniciar Sesión",
     "or": "O",
-    "googleSignIn": "Iniciar sesión con Google",
     "signUpTitle": "Registrarse",
     "signUpDescription": "Crea una nueva cuenta de CVForge.",
     "confirmPasswordLabel": "Confirmar Contraseña",
     "signUpButton": "Registrarse",
-    "googleSignUp": "Registrarse con Google",
     "loginSuccess": "Inicio de Sesión Exitoso",
     "loginSuccessDesc": "Redirigiendo...",
     "loginFailed": "Fallo en Inicio de Sesión",
@@ -61,13 +59,6 @@
     "signUpFailedDesc": "Ocurrió un error durante el registro. Por favor, inténtalo de nuevo.",
     "emailAlreadyInUseDesc": "Este correo electrónico ya está en uso. Por favor, intenta con un correo diferente o inicia sesión.",
     "weakPasswordDesc": "La contraseña es demasiado débil. Por favor, elige una contraseña más segura (al menos 6 caracteres).",
-    "googleSignInSuccess": "Inicio de Sesión con Google Exitoso",
-    "googleSignInSuccessDesc": "Redirigiendo...",
-    "signInCancelled": "Inicio de Sesión Cancelado",
-    "signInCancelledDesc": "Cerraste la ventana de inicio de sesión de Google.",
-    "googleSignInFailed": "Fallo en Inicio de Sesión con Google",
-    "googleSignInFailedDesc": "Ocurrió un error durante el inicio de sesión con Google. Por favor, inténtalo de nuevo.",
-    "googleAccountExists": "Ya existe una cuenta con esta dirección de correo electrónico utilizando un método de inicio de sesión diferente. Por favor, inicia sesión con tu método original.",
     "loggedOut": "Sesión Cerrada",
     "loggedOutDesc": "Has cerrado sesión exitosamente.",
     "logoutFailed": "Fallo al Cerrar Sesión",
@@ -238,7 +229,9 @@
     "recruiterBenefit3Title": "Acceso Simplificado",
     "recruiterBenefit3Desc": "Visualiza CVs profesionales y bien estructurados directamente en la plataforma.",
     "recruitersCta": "Encuentra Talento Ahora",
-    "recruitersImageAlt": "Captura de pantalla de la interfaz de búsqueda para reclutadores de CVForge mostrando una barra de búsqueda.",
+    "recruitersImageAlt": "Captura de pantalla de la interfaz de búsqueda para reclutadores de CVForge, mostrando el formulario de búsqueda de CV.",
     "footerRights": "Todos los derechos reservados."
   }
 }
+
+    

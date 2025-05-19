@@ -43,12 +43,10 @@
     "passwordPlaceholder": "Your password",
     "loginButton": "Login",
     "or": "OR",
-    "googleSignIn": "Sign in with Google",
     "signUpTitle": "Sign Up",
     "signUpDescription": "Create a new CVForge account.",
     "confirmPasswordLabel": "Confirm Password",
     "signUpButton": "Sign Up",
-    "googleSignUp": "Sign up with Google",
     "loginSuccess": "Login Successful",
     "loginSuccessDesc": "Redirecting...",
     "loginFailed": "Login Failed",
@@ -61,13 +59,6 @@
     "signUpFailedDesc": "An error occurred during signup. Please try again.",
     "emailAlreadyInUseDesc": "This email is already in use. Please try a different email or log in.",
     "weakPasswordDesc": "The password is too weak. Please choose a stronger password (at least 6 characters).",
-    "googleSignInSuccess": "Google Sign-In Successful",
-    "googleSignInSuccessDesc": "Redirecting...",
-    "signInCancelled": "Sign-In Cancelled",
-    "signInCancelledDesc": "You closed the Google Sign-In window.",
-    "googleSignInFailed": "Google Sign-In Failed",
-    "googleSignInFailedDesc": "An error occurred during Google Sign-In. Please try again.",
-    "googleAccountExists": "An account already exists with this email address using a different sign-in method. Please sign in with your original method.",
     "loggedOut": "Logged Out",
     "loggedOutDesc": "You have been successfully logged out.",
     "logoutFailed": "Logout Failed",
@@ -238,7 +229,9 @@
     "recruiterBenefit3Title": "Streamlined Access",
     "recruiterBenefit3Desc": "View well-structured, professional CVs directly within the platform.",
     "recruitersCta": "Find Top Talent",
-    "recruitersImageAlt": "Screenshot of CVForge recruiter search interface showing a search bar.",
+    "recruitersImageAlt": "Screenshot of CVForge recruiter search interface, showing the CV search form.",
     "footerRights": "All rights reserved."
   }
 }
+
+    

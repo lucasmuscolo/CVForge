@@ -10,8 +10,6 @@ import { z } from 'zod';
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithPopup,
     sendEmailVerification,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
@@ -24,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Chrome } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -53,7 +51,6 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function LoginPage() {
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [isLoadingSignup, setIsLoadingSignup] = useState(false);
-  const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -177,92 +174,6 @@ export default function LoginPage() {
      }
    };
 
-   const handleGoogleSignIn = async () => {
-       setIsLoadingGoogle(true);
-       const provider = new GoogleAuthProvider();
-       console.log('[GoogleSignIn] Attempting Google Sign-In.');
-       try {
-           const result = await signInWithPopup(auth, provider);
-           const user = result.user;
-           console.log('[GoogleSignIn] signInWithPopup successful for UID:', user.uid, 'Email verified:', user.emailVerified);
-           
-           if (user) {
-               console.log('[GoogleSignIn] User signed in/up:', user.uid, user.email);
-               let userProfile = await getUserProfile(user.uid);
-               console.log('[GoogleSignIn] Existing profile from Firestore:', userProfile);
-
-               if (!userProfile) {
-                   console.log('[GoogleSignIn] No existing profile. Creating new creator profile.');
-                   const cvCode = generateCvCode();
-                   const newProfileData = { email: user.email!, userType: 'creator' as 'creator', cvCode };
-                   await saveUserProfile(user.uid, newProfileData);
-                   userProfile = newProfileData; 
-                   console.log('[GoogleSignIn] New creator profile saved:', userProfile);
-               } else if (userProfile.userType === 'creator' && !userProfile.cvCode) {
-                  console.log('[GoogleSignIn] Existing creator profile missing CV code. Adding one.');
-                  const cvCode = generateCvCode();
-                  const updatedProfileData = { email: userProfile.email, userType: 'creator' as 'creator', cvCode };
-                  await saveUserProfile(user.uid, updatedProfileData);
-                  userProfile.cvCode = cvCode; 
-                  console.log('[GoogleSignIn] CV code added to creator profile.');
-               } else {
-                   console.log('[GoogleSignIn] Existing profile found. Type:', userProfile.userType);
-               }
-
-               if (!user.emailVerified) {
-                   console.log('[GoogleSignIn] User email not verified for UID (Google):', user.uid);
-                   toast({
-                       title: t('loginPage.emailNotVerifiedTitle'),
-                       description: t('loginPage.loginNeedsVerification'),
-                       variant: 'default',
-                       duration: 9000,
-                   });
-               } else {
-                  toast({ title: t('loginPage.googleSignInSuccess'), description: t('loginPage.googleSignInSuccessDesc') });
-               }
-               
-               if (userProfile && userProfile.userType === 'recruiter') {
-                   console.log('[GoogleSignIn] User is recruiter, redirecting to /search');
-                   router.push('/search');
-               } else {
-                   console.log('[GoogleSignIn] User is creator or default, redirecting to /cv-editor');
-                   router.push('/cv-editor');
-               }
-           } else {
-                console.error('[GoogleSignIn] User object was null after successful Google Sign-In.');
-                router.push('/'); // Fallback to landing page
-           }
-       } catch (error: any) {
-           console.error('[GoogleSignIn] Google Sign-In failed:', error, 'Error Code:', error.code);
-           let errorMessage = t('loginPage.googleSignInFailedDesc');
-           if (error.code === 'auth/popup-closed-by-user') {
-                 errorMessage = t('loginPage.signInCancelledDesc');
-                 toast({
-                    title: t('loginPage.signInCancelled'),
-                    description: errorMessage,
-                    variant: 'default',
-                 });
-           } else if (error.code === 'auth/account-exists-with-different-credential') {
-               errorMessage = t('loginPage.googleAccountExists');
-               toast({
-                   title: t('loginPage.googleSignInFailed'),
-                   description: errorMessage,
-                   variant: 'destructive',
-               });
-           }
-           else {
-               toast({
-                   title: t('loginPage.googleSignInFailed'),
-                   description: errorMessage,
-                   variant: 'destructive',
-               });
-            }
-       } finally {
-           setIsLoadingGoogle(false);
-           console.log('[GoogleSignIn] Google Sign-In attempt finished.');
-       }
-   };
-
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-secondary p-4">
@@ -292,7 +203,7 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="login-email">{t('loginPage.emailLabel')}</Label>
                            <FormControl>
-                             <Input id="login-email" type="email" placeholder={t('loginPage.emailPlaceholder')} {...field} disabled={isLoadingLogin || isLoadingGoogle} />
+                             <Input id="login-email" type="email" placeholder={t('loginPage.emailPlaceholder')} {...field} disabled={isLoadingLogin} />
                            </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -305,7 +216,7 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="login-password">{t('loginPage.passwordLabel')}</Label>
                             <FormControl>
-                              <Input id="login-password" type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} disabled={isLoadingLogin || isLoadingGoogle} />
+                              <Input id="login-password" type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} disabled={isLoadingLogin} />
                            </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -313,10 +224,11 @@ export default function LoginPage() {
                     />
                 </CardContent>
                 <CardFooter className="flex-col space-y-4">
-                   <Button type="submit" className="w-full" disabled={isLoadingLogin || isLoadingGoogle}>
+                   <Button type="submit" className="w-full" disabled={isLoadingLogin}>
                      {isLoadingLogin && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                      {t('loginPage.loginButton')}
                    </Button>
+                   {/* Google Sign-In button removed
                    <div className="relative w-full">
                       <Separator />
                       <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">{t('loginPage.or')}</span>
@@ -329,6 +241,7 @@ export default function LoginPage() {
                      )}
                      {t('loginPage.googleSignIn')}
                    </Button>
+                   */}
                 </CardFooter>
               </form>
             </Form>
@@ -352,7 +265,7 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="signup-email">{t('loginPage.emailLabel')}</Label>
                             <FormControl>
-                                <Input id="signup-email" type="email" placeholder={t('loginPage.emailPlaceholder')} {...field} disabled={isLoadingSignup || isLoadingGoogle} />
+                                <Input id="signup-email" type="email" placeholder={t('loginPage.emailPlaceholder')} {...field} disabled={isLoadingSignup} />
                             </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -365,7 +278,7 @@ export default function LoginPage() {
                         <FormItem>
                            <Label htmlFor="signup-password">{t('loginPage.passwordLabel')}</Label>
                            <FormControl>
-                             <Input id="signup-password" type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} disabled={isLoadingSignup || isLoadingGoogle} />
+                             <Input id="signup-password" type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} disabled={isLoadingSignup} />
                             </FormControl>
                            <FormMessage />
                         </FormItem>
@@ -378,7 +291,7 @@ export default function LoginPage() {
                          <FormItem>
                            <Label htmlFor="signup-confirm-password">{t('loginPage.confirmPasswordLabel')}</Label>
                            <FormControl>
-                             <Input id="signup-confirm-password" type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} disabled={isLoadingSignup || isLoadingGoogle} />
+                             <Input id="signup-confirm-password" type="password" placeholder={t('loginPage.passwordPlaceholder')} {...field} disabled={isLoadingSignup} />
                            </FormControl>
                            <FormMessage />
                          </FormItem>
@@ -395,7 +308,7 @@ export default function LoginPage() {
                                         onValueChange={field.onChange}
                                         defaultValue={field.value}
                                         className="flex flex-col space-y-1"
-                                        disabled={isLoadingSignup || isLoadingGoogle}
+                                        disabled={isLoadingSignup}
                                     >
                                         <FormItem className="flex items-center space-x-3 space-y-0">
                                             <FormControl>
@@ -421,10 +334,11 @@ export default function LoginPage() {
                     />
                 </CardContent>
                  <CardFooter className="flex-col space-y-4">
-                   <Button type="submit" className="w-full" disabled={isLoadingSignup || isLoadingGoogle}>
+                   <Button type="submit" className="w-full" disabled={isLoadingSignup}>
                      {isLoadingSignup && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                      {t('loginPage.signUpButton')}
                    </Button>
+                   {/* Google Sign-Up button removed
                     <div className="relative w-full">
                       <Separator />
                       <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">{t('loginPage.or')}</span>
@@ -437,6 +351,7 @@ export default function LoginPage() {
                      )}
                      {t('loginPage.googleSignUp')}
                    </Button>
+                  */}
                 </CardFooter>
               </form>
             </Form>
