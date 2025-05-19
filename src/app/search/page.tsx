@@ -289,8 +289,7 @@ export default function RecruiterSearchPage() {
 
         {!isSearching && searchedCvData && isEmailVerified && (
           <Card>
-            <CardHeader className="flex justify-between items-center">
-              <CardTitle>{t('searchPage.cvResultTitle')}</CardTitle>
+            <CardHeader className="flex justify-end items-center"> {/* Changed to justify-end and removed title */}
               <Button onClick={handleDownloadMarkdown} variant="outline" size="sm">
                 <Download className="mr-2 h-4 w-4" />
                 {t('searchPage.downloadMarkdownButton')}
@@ -309,3 +308,4 @@ export default function RecruiterSearchPage() {
     </div>
   );
 }
+
