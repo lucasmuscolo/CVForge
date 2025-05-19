@@ -11,7 +11,7 @@ import { CVPreview } from '@/components/cv-forge/CVPreview';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogOut, Search, Loader2, AlertTriangle, Download } from 'lucide-react'; // Added AlertTriangle & Download
+import { LogOut, Search, Loader2, AlertTriangle, Download, Printer } from 'lucide-react'; // Added Printer
 import { auth } from '@/lib/firebase/config';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -19,8 +19,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert components
-import { cvDataToMarkdown } from '@/lib/utils'; // Import the new utility
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cvDataToMarkdown } from '@/lib/utils';
 
 const performLogout = async (authInstance: typeof auth, toastFn: ReturnType<typeof useToast>['toast'], tFn: ReturnType<typeof useTranslation>['t']) => {
   try {
@@ -45,7 +45,7 @@ export default function RecruiterSearchPage() {
   const [localLoading, setLocalLoading] = useState(true);
   const [profileChecked, setProfileChecked] = useState(false);
   const [isRecruiter, setIsRecruiter] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState(false); // New state for email verification
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   const [searchCvCode, setSearchCvCode] = useState('');
   const [searchedCvData, setSearchedCvData] = useState<CvData | null | undefined>(undefined);
@@ -72,8 +72,7 @@ export default function RecruiterSearchPage() {
       return;
     }
 
-    // CurrentUser exists, auth is not loading
-    setIsEmailVerified(currentUser.emailVerified); // Set email verification status
+    setIsEmailVerified(currentUser.emailVerified);
 
     if (!profileChecked) {
       console.log('[SearchPage useEffect] Profile not checked, initiating check for UID:', currentUser.uid);
@@ -99,8 +98,8 @@ export default function RecruiterSearchPage() {
           console.error("[SearchPage useEffect] Error fetching user profile:", error);
           setIsRecruiter(false);
           stableToast({
-            title: stableT('cvForge.errorSaving'), // Consider a more generic error
-            description: stableT('loginPage.signUpFailedDesc'), 
+            title: stableT('cvForge.errorSaving'),
+            description: stableT('loginPage.signUpFailedDesc'),
             variant: 'destructive',
           });
           stableRouterPush('/');
@@ -116,7 +115,7 @@ export default function RecruiterSearchPage() {
           setLocalLoading(false);
       }
     }
-  }, [currentUser, authLoading, profileChecked, stableRouterPush, stableToast, stableT, localLoading]); // Added localLoading
+  }, [currentUser, authLoading, profileChecked, stableRouterPush, stableToast, stableT]);
 
 
   const handleLogoutClick = useCallback(() => {
@@ -142,21 +141,19 @@ export default function RecruiterSearchPage() {
     try {
       const userFound = await findUserByCvCode(searchCvCode.trim());
 
-      // Add check: If userFound is null, set message and return
       if (!userFound) {
-        setSearchMessage(t('searchPage.cvCodeNotFound')); // Use specific message for CV code not found
-        setSearchedCvData(null); // Ensure data is cleared
+        setSearchMessage(t('searchPage.cvCodeNotFound'));
+        setSearchedCvData(null);
         setIsSearching(false);
         return;
       }
 
-      // userFound exists, so userId should be valid
       const cvData = await getCvData(userFound.userId);
       setSearchedCvData(cvData);
       if (!cvData) {
-        setSearchMessage(t('searchPage.cvDataNotFoundForUser')); // New message if user found but no CV data
+        setSearchMessage(t('searchPage.cvDataNotFoundForUser'));
       } else {
-        setSearchMessage(''); // Clear message on success
+        setSearchMessage('');
       }
     } catch (error) {
       console.error("Error during CV search:", error);
@@ -192,6 +189,12 @@ export default function RecruiterSearchPage() {
     }
   };
 
+  const handlePrint = () => {
+      if (typeof window !== 'undefined') {
+        window.print();
+      }
+  };
+
 
   if (localLoading) {
     console.log('[SearchPage render] localLoading is true, rendering Skeleton.');
@@ -199,7 +202,7 @@ export default function RecruiterSearchPage() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-secondary p-4">
         <Skeleton className="h-10 w-64 mb-4" />
         <Skeleton className="h-8 w-48 mb-2" />
-        <Skeleton className="h-16 w-full max-w-lg mb-4" /> {/* For potential alert */}
+        <Skeleton className="h-16 w-full max-w-lg mb-4" />
         <Skeleton className="h-12 w-full max-w-md mb-6" />
         <Skeleton className="h-32 w-full max-w-md" />
       </div>
@@ -252,10 +255,10 @@ export default function RecruiterSearchPage() {
                   placeholder={t('searchPage.searchByCvCodePlaceholder')}
                   value={searchCvCode}
                   onChange={(e) => setSearchCvCode(e.target.value)}
-                  disabled={isSearching || !isEmailVerified} // Disable if not verified
+                  disabled={isSearching || !isEmailVerified}
                 />
               </div>
-              <Button type="submit" disabled={isSearching || !searchCvCode.trim() || !isEmailVerified} className="w-full sm:w-auto"> {/* Disable if not verified */}
+              <Button type="submit" disabled={isSearching || !searchCvCode.trim() || !isEmailVerified} className="w-full sm:w-auto">
                 {isSearching ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -282,21 +285,24 @@ export default function RecruiterSearchPage() {
 
         {!isSearching && searchedCvData === undefined && !searchMessage && isEmailVerified && (
              <div className="text-center py-10 text-muted-foreground">
-                {/* Prompt to enter code is handled by validation or if searchMessage is set */}
              </div>
         )}
 
 
         {!isSearching && searchedCvData && isEmailVerified && (
           <Card>
-            <CardHeader className="flex justify-end items-center"> {/* Changed to justify-end and removed title */}
-              <Button onClick={handleDownloadMarkdown} variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                {t('searchPage.downloadMarkdownButton')}
-              </Button>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6"> {/* Added pt-6 to give some space if CardHeader is removed */}
               <CVPreview data={searchedCvData} showFinalButton={false} />
+              <div className="mt-6 pt-6 border-t flex flex-col sm:flex-row justify-center items-center gap-4 print:hidden">
+                <Button onClick={handleDownloadMarkdown} variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  {t('searchPage.downloadMarkdownButton')}
+                </Button>
+                <Button onClick={handlePrint} variant="default">
+                  <Printer className="mr-2 h-4 w-4" />
+                  {t('finalCvPage.print')}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
