@@ -1,13 +1,14 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { CvData, ExperienceEntry, EducationEntry } from "@/components/cv-forge/types";
+import type { CvData, ExperienceEntry, EducationEntry, ProjectEntry } from "@/components/cv-forge/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 export function generateCvCode(length: number = 8): string {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'; // Removed symbols
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   const charactersLength = characters.length;
   for (let i = 0; i < length; i++) {
@@ -49,6 +50,21 @@ export function cvDataToMarkdown(data: CvData): string {
     markdown += `\n`;
   }
 
+  // Projects
+  if (data.projects && data.projects.length > 0) {
+    markdown += `## Projects\n\n`;
+    data.projects.forEach((proj: ProjectEntry) => {
+      markdown += `### ${proj.name || 'N/A'}\n`;
+      if (proj.description) {
+        const descLines = proj.description.split('\n').filter(line => line.trim() !== '');
+        descLines.forEach(line => {
+          markdown += `- ${line.replace(/^[-*]\s*/, '')}\n`;
+        });
+      }
+      markdown += `\n---\n\n`;
+    });
+  }
+
   // Experience
   if (data.experience && data.experience.length > 0) {
     markdown += `## Experience\n\n`;
@@ -58,7 +74,6 @@ export function cvDataToMarkdown(data: CvData): string {
       if (exp.location) markdown += `**Location:** ${exp.location}\n`;
       if (exp.responsibilities) {
         markdown += `\n**Responsibilities:**\n`;
-        // Assuming responsibilities might be multi-line, treat each line as a bullet point
         const resLines = exp.responsibilities.split('\n').filter(line => line.trim() !== '');
         resLines.forEach(line => {
           markdown += `- ${line.replace(/^[-*]\s*/, '')}\n`;

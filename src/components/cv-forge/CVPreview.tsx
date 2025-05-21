@@ -1,25 +1,17 @@
 
-import React from 'react';
-import Image from 'next/image'; // Import next/image
-import { Mail, Phone, Linkedin, Github, Link as LinkIcon, UserCircle, ArrowRight, Loader2 } from 'lucide-react';
-import type { CvData, ExperienceEntry, EducationEntry, PersonalInfo } from './types';
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
+import { Mail, Phone, Linkedin, Github, Link as LinkIcon, UserCircle, ArrowRight, Loader2, Languages, Briefcase, BookOpen, PencilLine, Lightbulb } from 'lucide-react';
+import type { CvData, ExperienceEntry, EducationEntry, PersonalInfo, ProjectEntry } from './types';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Skeleton } from '@/components/ui/skeleton'; // Used for loading state during translation
 
-
-interface CVPreviewProps {
-  data: CvData;
-  showFinalButton?: boolean;
-  onViewFinalClick?: () => Promise<void>;
-  isSaving?: boolean;
-  isEmailVerified?: boolean; // Added for button state
-}
-
-// Helper to format responsibilities
-const formatResponsibilities = (text: string | undefined | null): React.ReactNode => {
+// Helper to format multiline text (like responsibilities or project descriptions)
+const formatMultilineText = (text: string | undefined | null): React.ReactNode => {
   if (!text) return null;
   const lines = text.split('\n').filter(line => line.trim() !== '');
   if (lines.length <= 1 && !text.startsWith('- ') && !text.startsWith('* ')) {
@@ -37,12 +29,26 @@ const formatResponsibilities = (text: string | undefined | null): React.ReactNod
 };
 
 
+interface CVPreviewProps {
+  data: CvData;
+  showFinalButton?: boolean;
+  onViewFinalClick?: () => Promise<void>;
+  isSaving?: boolean;
+  isEmailVerified?: boolean;
+}
+
+
 export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSaving = false, isEmailVerified = true }: CVPreviewProps) {
   const { t } = useTranslation();
 
-  const { personalInfo, experience, education, skills } = data;
+  // Directly use the data prop for display. Translation logic was reverted.
+  const { personalInfo, experience, education, skills, projects } = data;
+
   const safePersonalInfo = personalInfo || { name: '', title: '', email: '', phone: '', linkedin: '', github: '', website: '', summary: '', photoDataUri: '' };
   const safeSkills = skills || [];
+  const safeProjects = projects || [];
+  const safeExperience = experience || [];
+  const safeEducation = education || [];
 
 
   return (
@@ -67,9 +73,9 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
 
               <div className="text-center sm:text-left flex-grow print:text-left">
                 <h1 className="text-2xl md:text-3xl font-bold mb-1">{safePersonalInfo.name || t('cvPreview.yourName')}</h1>
-                <div className="text-lg text-primary mb-3 print:text-black">
+                 <div className="text-lg text-primary mb-3 print:text-black">
                    {safePersonalInfo.title || t('cvPreview.yourTitle')}
-                </div>
+                 </div>
                 <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 text-sm text-muted-foreground print:justify-start print:text-black">
                   {safePersonalInfo.email && (
                     <a href={`mailto:${safePersonalInfo.email}`} className="flex items-center gap-1 hover:text-primary print:text-black print:hover:text-black">
@@ -109,7 +115,9 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           {/* Summary */}
           {safePersonalInfo.summary ? (
             <section className="mb-6 break-inside-avoid">
-                <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.summaryTitle')}</h2>
+                <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
+                    <PencilLine className="mr-2 h-5 w-5" /> {t('cvPreview.summaryTitle')}
+                </h2>
                 <div className="text-sm">
                   {safePersonalInfo.summary}
                 </div>
@@ -119,7 +127,9 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           {/* Skills */}
           {safeSkills.length > 0 && (
             <section className="mb-6 break-inside-avoid">
-              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.skillsTitle')}</h2>
+              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
+                <Lightbulb className="mr-2 h-5 w-5" /> {t('cvPreview.skillsTitle')}
+              </h2>
               <div className="flex flex-wrap gap-2">
                 {safeSkills.map((skill, index) => (
                   <Badge key={`${skill}-${index}`} variant="secondary" className="print:badge-print">
@@ -130,12 +140,33 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
             </section>
           )}
 
-          {/* Education */}
-          {education && education.length > 0 && (
+          {/* Projects */}
+          {safeProjects.length > 0 && (
             <section className="mb-6">
-              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.educationTitle')}</h2>
+              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
+                <Briefcase className="mr-2 h-5 w-5" /> {t('cvPreview.projectsTitle')}
+              </h2>
               <div className="space-y-4">
-                {education.map((edu) => (
+                {safeProjects.map((proj) => (
+                  <div key={proj.id} className="break-inside-avoid">
+                    <h3 className="text-md font-semibold">
+                      {proj.name || t('cvPreview.projectName')}
+                    </h3>
+                    {formatMultilineText(proj.description)}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Education */}
+          {safeEducation.length > 0 && (
+            <section className="mb-6">
+              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
+                <BookOpen className="mr-2 h-5 w-5" /> {t('cvPreview.educationTitle')}
+              </h2>
+              <div className="space-y-4">
+                {safeEducation.map((edu) => (
                   <div key={edu.id} className="break-inside-avoid">
                     <div className="flex justify-between items-start mb-1">
                         <h3 className="text-md font-semibold">
@@ -161,11 +192,13 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           )}
 
           {/* Experience */}
-          {experience && experience.length > 0 && (
+          {safeExperience.length > 0 && (
             <section className="mb-6">
-              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.experienceTitle')}</h2>
+              <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
+                <Briefcase className="mr-2 h-5 w-5" /> {t('cvPreview.experienceTitle')}
+              </h2>
               <div className="space-y-4">
-                {experience.map((exp) => (
+                {safeExperience.map((exp) => (
                   <div key={exp.id} className="break-inside-avoid">
                     <div className="flex justify-between items-start mb-1">
                       <h3 className="text-md font-semibold">
@@ -180,7 +213,7 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
                       <p className="text-sm font-medium">{exp.company || t('cvPreview.companyName')}</p>
                       <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{exp.location || t('cvPreview.location')}</p>
                     </div>
-                    {formatResponsibilities(exp.responsibilities)}
+                    {formatMultilineText(exp.responsibilities)}
                   </div>
                 ))}
               </div>
@@ -189,7 +222,7 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
 
 
           {/* Placeholder if empty */}
-          {!safePersonalInfo.name && safeSkills.length === 0 && (!experience || experience.length === 0) && (!education || education.length === 0) && (
+          {!safePersonalInfo.name && safeSkills.length === 0 && safeExperience.length === 0 && safeEducation.length === 0 && safeProjects.length === 0 && (
               <p className="text-center text-muted-foreground mt-10 print:hidden">{t('cvPreview.placeholder')}</p>
           )}
        </div>

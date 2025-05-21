@@ -142,6 +142,17 @@
     "removeSkill": "Eliminar {skill}",
     "noSkills": "Aún no has añadido habilidades."
   },
+  "projects": {
+    "title": "Proyectos",
+    "addProject": "Añadir Proyecto",
+    "removeProject": "Eliminar Proyecto",
+    "nameLabel": "Nombre del Proyecto",
+    "namePlaceholder": "Ej., Mi Aplicación Increíble",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Describe tu proyecto, su propósito y tu rol...",
+    "enhanceDescriptionTooltip": "Mejorar descripción con IA (No activo)",
+    "noProjects": "Aún no has añadido proyectos. Haz clic en \"Añadir Proyecto\" para empezar."
+  },
   "cvPreview": {
     "yourName": "Tu Nombre",
     "yourTitle": "Tu Título Profesional",
@@ -150,6 +161,8 @@
     "website": "Sitio Web",
     "summaryTitle": "Resumen",
     "skillsTitle": "Habilidades",
+    "projectsTitle": "Proyectos",
+    "projectName": "Nombre del Proyecto",
     "experienceTitle": "Experiencia Laboral",
     "jobTitle": "Puesto",
     "startDate": "Fecha Inicio",

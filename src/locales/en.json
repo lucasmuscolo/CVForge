@@ -142,6 +142,17 @@
     "removeSkill": "Remove {skill}",
     "noSkills": "No skills added yet."
   },
+  "projects": {
+    "title": "Projects",
+    "addProject": "Add Project",
+    "removeProject": "Remove Project",
+    "nameLabel": "Project Name",
+    "namePlaceholder": "e.g., My Awesome App",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe your project, its purpose, and your role...",
+    "enhanceDescriptionTooltip": "Enhance description with AI (Not active)",
+    "noProjects": "No projects added yet. Click \"Add Project\" to start."
+  },
   "cvPreview": {
     "yourName": "Your Name",
     "yourTitle": "Your Professional Title",
@@ -150,6 +161,8 @@
     "website": "Website",
     "summaryTitle": "Summary",
     "skillsTitle": "Skills",
+    "projectsTitle": "Projects",
+    "projectName": "Project Name",
     "experienceTitle": "Work Experience",
     "jobTitle": "Job Title",
     "startDate": "Start Date",

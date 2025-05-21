@@ -1,3 +1,4 @@
+
 export interface PersonalInfo {
   name: string;
   title: string;
@@ -29,9 +30,16 @@ export interface EducationEntry {
   details?: string;
 }
 
+export interface ProjectEntry {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export interface CvData {
   personalInfo: PersonalInfo;
   experience: ExperienceEntry[];
   education: EducationEntry[];
-  skills: string[]; // Added skills field
+  skills: string[];
+  projects: ProjectEntry[]; // Added projects field
 }

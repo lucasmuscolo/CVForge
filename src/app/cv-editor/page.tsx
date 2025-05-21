@@ -14,8 +14,9 @@ import { PersonalInfoForm } from '@/components/cv-forge/PersonalInfoForm';
 import { ExperienceForm } from '@/components/cv-forge/ExperienceForm';
 import { EducationForm } from '@/components/cv-forge/EducationForm';
 import { SkillsForm } from '@/components/cv-forge/SkillsForm';
+import { ProjectForm } from '@/components/cv-forge/ProjectForm'; // Import ProjectForm
 import { CVPreview } from '@/components/cv-forge/CVPreview';
-import type { CvData, PersonalInfo, ExperienceEntry, EducationEntry } from '@/components/cv-forge/types';
+import type { CvData, PersonalInfo, ExperienceEntry, EducationEntry, ProjectEntry } from '@/components/cv-forge/types';
 import { enhanceResumeLanguage } from '@/ai/flows/enhance-resume-language';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +31,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 
-// Zod Schemas remain the same (no translation needed for validation logic)
+// Zod Schemas
 const personalInfoSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
   title: z.string().min(1, 'Professional title is required'),
@@ -62,14 +63,21 @@ const educationEntrySchema = z.object({
   details: z.string().optional(),
 });
 
+const projectEntrySchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, 'Project name is required'),
+  description: z.string().min(1, 'Project description is required'),
+});
+
 const cvDataSchema = z.object({
   personalInfo: personalInfoSchema,
   experience: z.array(experienceEntrySchema),
   education: z.array(educationEntrySchema),
   skills: z.array(z.string()).optional(),
+  projects: z.array(projectEntrySchema).optional(), // Added projects
 });
 
-// Default empty state remains the same
+// Default empty state
 const defaultCvData: CvData = {
   personalInfo: {
     name: '', title: '', phone: '', email: '', linkedin: '', github: '', website: '', summary: '', photoDataUri: ''
@@ -77,9 +85,10 @@ const defaultCvData: CvData = {
   experience: [],
   education: [],
   skills: [],
+  projects: [], // Added projects
 };
 
-export default function CVEditorPage() { // Changed component name
+export default function CVEditorPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const { t, locale } = useTranslation();
   const router = useRouter();
@@ -105,10 +114,9 @@ export default function CVEditorPage() { // Changed component name
       router.push('/login');
     } else if (currentUser) {
       setIsEmailVerified(currentUser.emailVerified);
-       // Check if the current user is a recruiter and redirect if so
        getUserProfile(currentUser.uid).then(profile => {
         if (profile && profile.userType === 'recruiter') {
-          router.push('/search'); // Or landing page, depending on desired UX
+          router.push('/search');
         }
       });
     }
@@ -141,6 +149,7 @@ export default function CVEditorPage() { // Changed component name
                 experience: (loadedCvData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
                 education: (loadedCvData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
                 skills: Array.isArray(loadedCvData.skills) ? loadedCvData.skills : [],
+                projects: (loadedCvData.projects || []).map(proj => ({ ...proj, id: proj.id || crypto.randomUUID() })), // Ensure projects are loaded
             } : defaultCvData;
             console.log('[CVEditorPage] CV data to set:', cvDataToSet);
             setCvData(cvDataToSet);
@@ -151,10 +160,9 @@ export default function CVEditorPage() { // Changed component name
             const loadedUserProfile = await getUserProfile(currentUser.uid);
             console.log('[CVEditorPage] User profile loaded:', loadedUserProfile);
             setUserProfile(loadedUserProfile);
-             // Redirect if recruiter profile is loaded here
             if (loadedUserProfile && loadedUserProfile.userType === 'recruiter') {
               router.push('/search');
-              return; // Stop further processing for this effect
+              return;
             }
 
 
@@ -194,12 +202,13 @@ export default function CVEditorPage() { // Changed component name
 
      const subscription = form.watch((value) => {
        const currentData = value as Partial<CvData>;
-       if (currentData && typeof currentData.personalInfo === 'object' && Array.isArray(currentData.experience) && Array.isArray(currentData.education)) {
+       if (currentData && typeof currentData.personalInfo === 'object' && Array.isArray(currentData.experience) && Array.isArray(currentData.education) && Array.isArray(currentData.projects)) {
          const dataForPreview: CvData = {
            personalInfo: { ...defaultCvData.personalInfo, ...currentData.personalInfo },
            experience: currentData.experience.map(exp => ({ ...exp })),
            education: currentData.education.map(edu => ({ ...edu })),
            skills: Array.isArray(currentData.skills) ? currentData.skills : [],
+           projects: currentData.projects.map(proj => ({ ...proj })), // Ensure projects are watched
          };
          setCvData(dataForPreview); 
        }
@@ -212,7 +221,7 @@ export default function CVEditorPage() { // Changed component name
     try {
       await signOut(auth);
       toast({ title: t('loginPage.loggedOut'), description: t('loginPage.loggedOutDesc') });
-      router.push('/'); // Redirect to landing page after logout
+      router.push('/');
     } catch (error) {
       console.error('Logout failed:', error);
       toast({
@@ -249,6 +258,7 @@ export default function CVEditorPage() { // Changed component name
          experience: currentFormData.experience.map(exp => ({ ...exp })),
          education: currentFormData.education.map(edu => ({ ...edu })),
          skills: Array.isArray(currentFormData.skills) ? currentFormData.skills : [],
+         projects: Array.isArray(currentFormData.projects) ? currentFormData.projects.map(proj => ({ ...proj })) : [], // Ensure projects are saved
        };
 
       const hasChanges = JSON.stringify(dataToSave) !== JSON.stringify(initialCvData);
@@ -277,7 +287,7 @@ export default function CVEditorPage() { // Changed component name
 
 
    const getEnhancingKey = (
-     section: 'personalInfo' | 'experience' | 'education' | 'skills',
+     section: 'personalInfo' | 'experience' | 'education' | 'skills' | 'projects',
      fieldName: string,
      index?: number
    ): string => {
@@ -285,7 +295,7 @@ export default function CVEditorPage() { // Changed component name
    };
 
   const enhanceText = useCallback(async (
-     section: 'personalInfo' | 'experience' | 'education' | 'skills',
+     section: 'personalInfo' | 'experience' | 'education' | 'skills' | 'projects',
      fieldName: FieldPath<CvData>,
      currentText: string,
      index?: number 
@@ -333,9 +343,20 @@ export default function CVEditorPage() { // Changed component name
      },
      [enhanceText]
    );
+   
+   // Placeholder for enhanceProjectText - AI enhancement not implemented for projects in this step
+   const enhanceProjectText = useCallback(
+    async (index: number, fieldName: keyof ProjectEntry, currentText: string) => {
+      // For now, this is a no-op. If AI enhancement for projects is needed, implement similar to enhanceExperienceText
+      console.log('AI enhancement for projects not yet implemented.', index, fieldName, currentText);
+      toast({ title: 'AI Not Active', description: 'AI enhancement for project descriptions is not yet active.', variant: 'default' });
+    },
+    [toast] // Added toast dependency
+  );
+
 
    const isEnhancing = useCallback(
-     (section: 'personalInfo' | 'experience' | 'education' | 'skills', fieldName: string, index?: number): boolean => {
+     (section: 'personalInfo' | 'experience' | 'education' | 'skills' | 'projects', fieldName: string, index?: number): boolean => {
        const key = getEnhancingKey(section, fieldName, index);
        return !!enhancingState[key];
      },
@@ -363,6 +384,15 @@ export default function CVEditorPage() { // Changed component name
      [isEnhancing]
    );
 
+    // Placeholder for isEnhancingProject - AI enhancement not implemented for projects in this step
+    const isEnhancingProject = useCallback(
+        (index: number, fieldName: keyof ProjectEntry): boolean => {
+            // For now, always returns false. Update if AI enhancement is added.
+            return false;
+        },
+        []
+    );
+
     const handleCopyCode = useCallback(async () => {
         if (userProfile && userProfile.userType === 'creator' && userProfile.cvCode) {
         try {
@@ -378,7 +408,6 @@ export default function CVEditorPage() { // Changed component name
 
    const inputSection = useMemo(() => (
        <div className="space-y-6">
-         {/* Row 1: Main Title and Utility Buttons */}
          <div className="flex justify-between items-center gap-2">
             <h1 className="text-2xl font-bold text-primary">{t('cvForge.title')}</h1>
             <div className="flex items-center gap-2">
@@ -391,7 +420,6 @@ export default function CVEditorPage() { // Changed component name
              </div>
          </div>
 
-         {/* Row 2: Description and CV Code display */}
          <div className="flex justify-between items-center gap-2">
              <p className="text-muted-foreground flex-grow">{t('cvForge.description')}</p>
              {userProfile && userProfile.userType === 'creator' && userProfile.cvCode && (
@@ -404,7 +432,6 @@ export default function CVEditorPage() { // Changed component name
              )}
          </div>
 
-        {/* Email Verification Alert for Creators */}
         {currentUser && userProfile?.userType === 'creator' && !isEmailVerified && (
             <Alert variant="default" className="border-yellow-500 bg-yellow-50 text-yellow-700">
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
@@ -415,18 +442,18 @@ export default function CVEditorPage() { // Changed component name
             </Alert>
         )}
 
-
          <PersonalInfoForm
              form={form as UseFormReturn<any>}
             enhanceText={enhancePersonalInfo}
             isEnhancing={isEnhancingPersonalInfo}
          />
+         <SkillsForm form={form} />
+         <ProjectForm form={form} enhanceText={enhanceProjectText} isEnhancing={isEnhancingProject} /> {/* Added ProjectForm */}
          <ExperienceForm form={form} enhanceText={enhanceExperienceText} isEnhancing={isEnhancingExperience} />
          <EducationForm form={form} />
-         <SkillsForm form={form} />
        </div>
      // eslint-disable-next-line react-hooks/exhaustive-deps
-     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, currentUser, t, handleLogout, userProfile, handleCopyCode, isEmailVerified]); 
+     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, enhanceProjectText, isEnhancingProject, currentUser, t, handleLogout, userProfile, handleCopyCode, isEmailVerified]); 
 
    const previewSection = useMemo(() => (
        <div className="md:sticky md:top-6 print:static print:top-auto">
@@ -436,7 +463,7 @@ export default function CVEditorPage() { // Changed component name
              onViewFinalClick={handleSaveAndNavigate} 
              isSaving={isSaving} 
              showFinalButton={true} 
-             isEmailVerified={userProfile?.userType === 'creator' ? isEmailVerified : true} // Pass verification status for button state
+             isEmailVerified={userProfile?.userType === 'creator' ? isEmailVerified : true}
            />
        </div>
    // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -452,12 +479,12 @@ export default function CVEditorPage() { // Changed component name
                     <Skeleton className="h-8 w-24" />
                 </div>
                 <Skeleton className="h-6 w-48" />
-                {/* Added skeleton for potential alert */}
                 <Skeleton className="h-16 w-full" /> 
-                <Skeleton className="h-64 w-full" />
-                <Skeleton className="h-80 w-full" />
-                <Skeleton className="h-56 w-full" />
-                <Skeleton className="h-40 w-full" />
+                <Skeleton className="h-64 w-full" /> {/* PersonalInfo */}
+                <Skeleton className="h-40 w-full" /> {/* Skills */}
+                <Skeleton className="h-56 w-full" /> {/* Projects (New Skeleton) */}
+                <Skeleton className="h-80 w-full" /> {/* Experience */}
+                <Skeleton className="h-56 w-full" /> {/* Education */}
              </div>
              <div className="w-full md:w-1/2 lg:w-3/5 p-4 md:p-6 lg:p-8">
                  <Skeleton className="h-6 w-32 mb-4" />
@@ -482,5 +509,3 @@ export default function CVEditorPage() { // Changed component name
     </>
   );
 }
-
-    
