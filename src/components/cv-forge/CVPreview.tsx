@@ -1,21 +1,22 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { Mail, Phone, Linkedin, Github, Link as LinkIcon, UserCircle, ArrowRight, Loader2, Languages, Briefcase, BookOpen, PencilLine, Lightbulb } from 'lucide-react';
+import { Mail, Phone, Linkedin, Github, Link as LinkIcon, UserCircle, ArrowRight, Loader2, Briefcase, BookOpen, PencilLine, Lightbulb } from 'lucide-react';
 import type { CvData, ExperienceEntry, EducationEntry, PersonalInfo, ProjectEntry } from './types';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Skeleton } from '@/components/ui/skeleton'; // Used for loading state during translation
+import { Skeleton } from '@/components/ui/skeleton';
+import { translateText } from '@/ai/flows/translate-text-flow'; // Import the translation flow
 
 // Helper to format multiline text (like responsibilities or project descriptions)
 const formatMultilineText = (text: string | undefined | null): React.ReactNode => {
   if (!text) return null;
   const lines = text.split('\n').filter(line => line.trim() !== '');
   if (lines.length <= 1 && !text.startsWith('- ') && !text.startsWith('* ')) {
-      return <p className="text-sm break-inside-avoid">{text}</p>;
+      return <div className="text-sm break-inside-avoid">{text}</div>; // Changed p to div
   }
   return (
     <ul className="list-disc list-outside pl-5 space-y-1 break-inside-avoid">
@@ -35,15 +36,138 @@ interface CVPreviewProps {
   onViewFinalClick?: () => Promise<void>;
   isSaving?: boolean;
   isEmailVerified?: boolean;
+  enableContentTranslation?: boolean; // New prop
 }
 
 
-export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSaving = false, isEmailVerified = true }: CVPreviewProps) {
-  const { t } = useTranslation();
+export function CVPreview({ 
+  data, 
+  showFinalButton = true, 
+  onViewFinalClick, 
+  isSaving = false, 
+  isEmailVerified = true,
+  enableContentTranslation = false // Default to false
+}: CVPreviewProps) {
+  const { t, locale } = useTranslation();
 
-  // Directly use the data prop for display. Translation logic was reverted.
-  const { personalInfo, experience, education, skills, projects } = data;
+  const [originalData, setOriginalData] = useState<CvData>(JSON.parse(JSON.stringify(data)));
+  const [displayedCvData, setDisplayedCvData] = useState<CvData>(JSON.parse(JSON.stringify(data)));
+  const [isTranslating, setIsTranslating] = useState<Record<string, boolean>>({}); // Track translation status per field
 
+
+  useEffect(() => {
+    // Update originalData whenever the data prop changes
+    // This ensures that edits in CVEditorPage are reflected as the new "source" for translation
+    setOriginalData(JSON.parse(JSON.stringify(data)));
+  }, [data]);
+
+  useEffect(() => {
+    if (!enableContentTranslation || !originalData) {
+      setDisplayedCvData(JSON.parse(JSON.stringify(originalData || data))); // Use originalData if available, else fallback to data
+      setIsTranslating({}); // Reset all translation statuses
+      return;
+    }
+
+    const translateAllFields = async () => {
+      const newDisplayedData = JSON.parse(JSON.stringify(originalData));
+      const newIsTranslating: Record<string, boolean> = {};
+
+      const translateField = async (fieldKey: string, text: string | undefined | null): Promise<string> => {
+        if (!text || !text.trim()) return text || '';
+        newIsTranslating[fieldKey] = true;
+        setIsTranslating(prev => ({ ...prev, [fieldKey]: true }));
+        try {
+          const result = await translateText({ textToTranslate: text, targetLanguage: locale });
+          return result.translatedText;
+        } catch (error) {
+          console.error(`Error translating field ${fieldKey}:`, error);
+          return text; // Fallback to original text on error
+        } finally {
+          setIsTranslating(prev => ({ ...prev, [fieldKey]: false }));
+        }
+      };
+
+      // PersonalInfo
+      if (newDisplayedData.personalInfo) {
+        newDisplayedData.personalInfo.title = await translateField('personalInfo.title', originalData.personalInfo?.title);
+        newDisplayedData.personalInfo.summary = await translateField('personalInfo.summary', originalData.personalInfo?.summary);
+      }
+
+      // Skills
+      if (Array.isArray(originalData.skills)) {
+        newDisplayedData.skills = await Promise.all(
+          originalData.skills.map((skill, index) => translateField(`skills.${index}`, skill))
+        );
+      } else {
+        newDisplayedData.skills = [];
+      }
+      
+      // Projects
+      if (Array.isArray(originalData.projects)) {
+        newDisplayedData.projects = await Promise.all(
+          originalData.projects.map(async (proj, index) => ({
+            ...proj,
+            name: await translateField(`projects.${index}.name`, proj.name),
+            description: await translateField(`projects.${index}.description`, proj.description),
+          }))
+        );
+      } else {
+         newDisplayedData.projects = [];
+      }
+
+      // Education
+      if (Array.isArray(originalData.education)) {
+        newDisplayedData.education = await Promise.all(
+          originalData.education.map(async (edu, index) => ({
+            ...edu,
+            degree: await translateField(`education.${index}.degree`, edu.degree),
+            institution: await translateField(`education.${index}.institution`, edu.institution),
+            details: await translateField(`education.${index}.details`, edu.details),
+          }))
+        );
+      } else {
+        newDisplayedData.education = [];
+      }
+
+      // Experience
+      if (Array.isArray(originalData.experience)) {
+        newDisplayedData.experience = await Promise.all(
+          originalData.experience.map(async (exp, index) => ({
+            ...exp,
+            jobTitle: await translateField(`experience.${index}.jobTitle`, exp.jobTitle),
+            company: await translateField(`experience.${index}.company`, exp.company),
+            responsibilities: await translateField(`experience.${index}.responsibilities`, exp.responsibilities),
+          }))
+        );
+      } else {
+        newDisplayedData.experience = [];
+      }
+      
+      setDisplayedCvData(newDisplayedData);
+      // setIsTranslating(newIsTranslating); // This was problematic, managing individual field loading above.
+    };
+
+    translateAllFields();
+
+  }, [locale, originalData, enableContentTranslation]);
+
+
+  const renderTextWithLoading = (text: string | undefined, fieldKey: string, defaultTextKey?: string) => {
+    if (isTranslating[fieldKey] && enableContentTranslation) {
+      return <Skeleton className="h-4 w-3/4 my-1" />;
+    }
+    return text || (defaultTextKey ? t(defaultTextKey) : '');
+  };
+  
+  const renderFormattedTextWithLoading = (text: string | undefined, fieldKey: string) => {
+      if (isTranslating[fieldKey] && enableContentTranslation) {
+        return <Skeleton className="h-10 w-full my-1" />; // Adjust skeleton size as needed
+      }
+      return formatMultilineText(text);
+  };
+
+
+  const { personalInfo, experience, education, skills, projects } = displayedCvData || {};
   const safePersonalInfo = personalInfo || { name: '', title: '', email: '', phone: '', linkedin: '', github: '', website: '', summary: '', photoDataUri: '' };
   const safeSkills = skills || [];
   const safeProjects = projects || [];
@@ -74,7 +198,7 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
               <div className="text-center sm:text-left flex-grow print:text-left">
                 <h1 className="text-2xl md:text-3xl font-bold mb-1">{safePersonalInfo.name || t('cvPreview.yourName')}</h1>
                  <div className="text-lg text-primary mb-3 print:text-black">
-                   {safePersonalInfo.title || t('cvPreview.yourTitle')}
+                   {renderTextWithLoading(safePersonalInfo.title, 'personalInfo.title', 'cvPreview.yourTitle')}
                  </div>
                 <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 text-sm text-muted-foreground print:justify-start print:text-black">
                   {safePersonalInfo.email && (
@@ -113,19 +237,19 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
 
 
           {/* Summary */}
-          {safePersonalInfo.summary ? (
+          {(safePersonalInfo.summary || (isTranslating['personalInfo.summary'] && enableContentTranslation)) && (
             <section className="mb-6 break-inside-avoid">
                 <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
                     <PencilLine className="mr-2 h-5 w-5" /> {t('cvPreview.summaryTitle')}
                 </h2>
                 <div className="text-sm">
-                  {safePersonalInfo.summary}
+                  {renderFormattedTextWithLoading(safePersonalInfo.summary, 'personalInfo.summary')}
                 </div>
             </section>
-          ): null}
+          )}
 
           {/* Skills */}
-          {safeSkills.length > 0 && (
+          {(safeSkills.length > 0 || (Object.keys(isTranslating).some(k => k.startsWith('skills.')) && enableContentTranslation)) && (
             <section className="mb-6 break-inside-avoid">
               <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
                 <Lightbulb className="mr-2 h-5 w-5" /> {t('cvPreview.skillsTitle')}
@@ -133,7 +257,7 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
               <div className="flex flex-wrap gap-2">
                 {safeSkills.map((skill, index) => (
                   <Badge key={`${skill}-${index}`} variant="secondary" className="print:badge-print">
-                    {skill}
+                    {renderTextWithLoading(skill, `skills.${index}`)}
                   </Badge>
                 ))}
               </div>
@@ -141,18 +265,18 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           )}
 
           {/* Projects */}
-          {safeProjects.length > 0 && (
+          {(safeProjects.length > 0 || (Object.keys(isTranslating).some(k => k.startsWith('projects.')) && enableContentTranslation)) && (
             <section className="mb-6">
               <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
                 <Briefcase className="mr-2 h-5 w-5" /> {t('cvPreview.projectsTitle')}
               </h2>
               <div className="space-y-4">
-                {safeProjects.map((proj) => (
+                {safeProjects.map((proj, index) => (
                   <div key={proj.id} className="break-inside-avoid">
                     <h3 className="text-md font-semibold">
-                      {proj.name || t('cvPreview.projectName')}
+                      {renderTextWithLoading(proj.name, `projects.${index}.name`, 'cvPreview.projectName')}
                     </h3>
-                    {formatMultilineText(proj.description)}
+                    {renderFormattedTextWithLoading(proj.description, `projects.${index}.description`)}
                   </div>
                 ))}
               </div>
@@ -160,29 +284,31 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           )}
 
           {/* Education */}
-          {safeEducation.length > 0 && (
+          {(safeEducation.length > 0 || (Object.keys(isTranslating).some(k => k.startsWith('education.')) && enableContentTranslation)) && (
             <section className="mb-6">
               <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
                 <BookOpen className="mr-2 h-5 w-5" /> {t('cvPreview.educationTitle')}
               </h2>
               <div className="space-y-4">
-                {safeEducation.map((edu) => (
+                {safeEducation.map((edu, index) => (
                   <div key={edu.id} className="break-inside-avoid">
                     <div className="flex justify-between items-start mb-1">
                         <h3 className="text-md font-semibold">
-                           {edu.degree || t('cvPreview.degree')}
+                           {renderTextWithLoading(edu.degree, `education.${index}.degree`, 'cvPreview.degree')}
                         </h3>
                         <span className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">
                           {edu.graduationDate || t('cvPreview.graduationDate')}
                         </span>
                       </div>
                     <div className="flex justify-between items-start mb-1">
-                      <p className="text-sm font-medium">{edu.institution || t('cvPreview.institutionName')}</p>
+                      <p className="text-sm font-medium">
+                        {renderTextWithLoading(edu.institution, `education.${index}.institution`, 'cvPreview.institutionName')}
+                      </p>
                         <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{edu.location || t('cvPreview.location')}</p>
                     </div>
-                    { edu.details &&
+                    { (edu.details || (isTranslating[`education.${index}.details`] && enableContentTranslation)) &&
                         <div className="text-sm italic text-muted-foreground print:text-black">
-                           {edu.details}
+                           {renderTextWithLoading(edu.details, `education.${index}.details`)}
                         </div>
                     }
                   </div>
@@ -192,17 +318,17 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           )}
 
           {/* Experience */}
-          {safeExperience.length > 0 && (
+          {(safeExperience.length > 0 || (Object.keys(isTranslating).some(k => k.startsWith('experience.')) && enableContentTranslation)) && (
             <section className="mb-6">
               <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black flex items-center">
                 <Briefcase className="mr-2 h-5 w-5" /> {t('cvPreview.experienceTitle')}
               </h2>
               <div className="space-y-4">
-                {safeExperience.map((exp) => (
+                {safeExperience.map((exp, index) => (
                   <div key={exp.id} className="break-inside-avoid">
                     <div className="flex justify-between items-start mb-1">
                       <h3 className="text-md font-semibold">
-                         {exp.jobTitle || t('cvPreview.jobTitle')}
+                         {renderTextWithLoading(exp.jobTitle, `experience.${index}.jobTitle`, 'cvPreview.jobTitle')}
                       </h3>
                       <span className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">
                         {exp.startDate || t('cvPreview.startDate')} - {exp.endDate || t('cvPreview.endDate')}
@@ -210,10 +336,12 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
                     </div>
 
                     <div className="flex justify-between items-start mb-1">
-                      <p className="text-sm font-medium">{exp.company || t('cvPreview.companyName')}</p>
+                      <p className="text-sm font-medium">
+                        {renderTextWithLoading(exp.company, `experience.${index}.company`, 'cvPreview.companyName')}
+                      </p>
                       <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{exp.location || t('cvPreview.location')}</p>
                     </div>
-                    {formatMultilineText(exp.responsibilities)}
+                     {renderFormattedTextWithLoading(exp.responsibilities, `experience.${index}.responsibilities`)}
                   </div>
                 ))}
               </div>
@@ -221,8 +349,9 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           )}
 
 
-          {/* Placeholder if empty */}
-          {!safePersonalInfo.name && safeSkills.length === 0 && safeExperience.length === 0 && safeEducation.length === 0 && safeProjects.length === 0 && (
+          {/* Placeholder if empty and not translating */}
+          {!safePersonalInfo?.name && safeSkills.length === 0 && safeExperience.length === 0 && safeEducation.length === 0 && safeProjects.length === 0 && 
+           Object.keys(isTranslating).length === 0 && (
               <p className="text-center text-muted-foreground mt-10 print:hidden">{t('cvPreview.placeholder')}</p>
           )}
        </div>

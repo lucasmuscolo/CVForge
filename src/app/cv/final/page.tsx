@@ -21,6 +21,7 @@ const defaultCvData: CvData = {
   experience: [],
   education: [],
   skills: [],
+  projects: [],
 };
 
 export default function FinalCVPage() {
@@ -54,6 +55,7 @@ export default function FinalCVPage() {
                 experience: (loadedCvData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
                 education: (loadedCvData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
                 skills: Array.isArray(loadedCvData.skills) ? loadedCvData.skills : [],
+                projects: Array.isArray(loadedCvData.projects) ? loadedCvData.projects : [],
             } : defaultCvData; // Use default if no data found in Firestore
           setCvData(dataToSet);
 
@@ -132,6 +134,7 @@ export default function FinalCVPage() {
                     </div>
                     <Skeleton className="h-20 w-full" /> {/* Summary */}
                     <Skeleton className="h-16 w-full" /> {/* Skills */}
+                    <Skeleton className="h-24 w-full" /> {/* Projects */}
                     <Skeleton className="h-32 w-full" /> {/* Education before Experience */}
                     <Skeleton className="h-40 w-full" /> {/* Experience */}
                </div>
@@ -178,7 +181,11 @@ export default function FinalCVPage() {
          </div>
         {/* Wrap CVPreview in a div with specific ID for print styling */}
         <div id="cv-preview-container" className="print:p-0 print:m-0">
-            <CVPreview data={cvData} showFinalButton={false} />
+            <CVPreview 
+              data={cvData} 
+              showFinalButton={false} 
+              enableContentTranslation={true} // Content translation enabled here
+            />
         </div>
       </div>
     </div>

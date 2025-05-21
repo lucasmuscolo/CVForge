@@ -47,6 +47,7 @@ const translateTextFlow = ai.defineFlow(
     outputSchema: TranslateTextOutputSchema,
   },
   async input => {
+    // Handle empty or whitespace-only strings to avoid unnecessary API calls
     if (!input.textToTranslate.trim()) {
       return { translatedText: input.textToTranslate };
     }

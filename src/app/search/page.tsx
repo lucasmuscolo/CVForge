@@ -98,8 +98,8 @@ export default function RecruiterSearchPage() {
           console.error("[SearchPage useEffect] Error fetching user profile:", error);
           setIsRecruiter(false);
           stableToast({
-            title: stableT('cvForge.errorSaving'),
-            description: stableT('loginPage.signUpFailedDesc'),
+            title: stableT('cvForge.errorSaving'), // This was 'errorSaving', perhaps should be a more generic error
+            description: stableT('loginPage.signUpFailedDesc'), // This was specific to signup
             variant: 'destructive',
           });
           stableRouterPush('/');
@@ -115,12 +115,13 @@ export default function RecruiterSearchPage() {
           setLocalLoading(false);
       }
     }
-  }, [currentUser, authLoading, profileChecked, stableRouterPush, stableToast, stableT]);
+  }, [currentUser, authLoading, profileChecked, stableRouterPush, stableToast, stableT, localLoading]); // Added localLoading
 
 
   const handleLogoutClick = useCallback(() => {
     performLogout(auth, toast, t);
-  }, [toast, t]);
+    router.push('/login'); // Redirect to login after logout
+  }, [toast, t, router]);
 
   const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -211,6 +212,7 @@ export default function RecruiterSearchPage() {
 
   if (!isRecruiter) {
     console.log('[SearchPage render] Not a recruiter or profile not confirmed as recruiter, rendering access denied.');
+    // This case should ideally be handled by redirection in useEffect, but good to have a fallback.
     return <div className="flex justify-center items-center min-h-screen">{t('searchPage.accessDenied')}</div>;
   }
 
@@ -285,14 +287,19 @@ export default function RecruiterSearchPage() {
 
         {!isSearching && searchedCvData === undefined && !searchMessage && isEmailVerified && (
              <div className="text-center py-10 text-muted-foreground">
+                  {/* Prompt to search if nothing has been searched yet */}
              </div>
         )}
 
 
         {!isSearching && searchedCvData && isEmailVerified && (
           <Card>
-            <CardContent className="pt-6"> {/* Added pt-6 to give some space if CardHeader is removed */}
-              <CVPreview data={searchedCvData} showFinalButton={false} />
+            <CardContent className="pt-6"> 
+              <CVPreview 
+                data={searchedCvData} 
+                showFinalButton={false} 
+                enableContentTranslation={true} // Content translation enabled here
+              />
               <div className="mt-6 pt-6 border-t flex flex-col sm:flex-row justify-center items-center gap-4 print:hidden">
                 <Button onClick={handleDownloadMarkdown} variant="outline">
                   <Download className="mr-2 h-4 w-4" />

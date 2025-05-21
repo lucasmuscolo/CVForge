@@ -150,7 +150,7 @@
     "namePlaceholder": "e.g., My Awesome App",
     "descriptionLabel": "Description",
     "descriptionPlaceholder": "Describe your project, its purpose, and your role...",
-    "enhanceDescriptionTooltip": "Enhance description with AI (Not active)",
+    "enhanceDescriptionTooltip": "Enhance description with AI",
     "noProjects": "No projects added yet. Click \"Add Project\" to start."
   },
   "cvPreview": {
@@ -173,7 +173,8 @@
     "degree": "Degree/Certificate",
     "graduationDate": "Graduation Date",
     "institutionName": "Institution Name",
-    "placeholder": "Start filling out the forms on the left to see your CV preview here."
+    "placeholder": "Start filling out the forms on the left to see your CV preview here.",
+    "translatingContent": "Translating content..."
   },
   "finalCvPage": {
     "back": "Back",
@@ -189,7 +190,9 @@
     "success": "Enhancement Successful",
     "successDesc": "Text has been updated.",
     "failed": "AI Enhancement Failed",
-    "failedDesc": "Could not enhance the text. Please try again later."
+    "failedDesc": "Could not enhance the text. Please try again later.",
+    "notActiveTitle": "AI Not Active",
+    "notActiveProjectDesc": "AI enhancement for project descriptions is not yet active."
   },
   "buttons": {
     "toggleLanguage": "Toggle Language"

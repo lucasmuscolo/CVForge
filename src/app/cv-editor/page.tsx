@@ -349,9 +349,9 @@ export default function CVEditorPage() {
     async (index: number, fieldName: keyof ProjectEntry, currentText: string) => {
       // For now, this is a no-op. If AI enhancement for projects is needed, implement similar to enhanceExperienceText
       console.log('AI enhancement for projects not yet implemented.', index, fieldName, currentText);
-      toast({ title: 'AI Not Active', description: 'AI enhancement for project descriptions is not yet active.', variant: 'default' });
+      toast({ title: t('aiEnhance.notActiveTitle'), description: t('aiEnhance.notActiveProjectDesc'), variant: 'default' });
     },
-    [toast] // Added toast dependency
+    [toast, t] 
   );
 
 
@@ -387,10 +387,12 @@ export default function CVEditorPage() {
     // Placeholder for isEnhancingProject - AI enhancement not implemented for projects in this step
     const isEnhancingProject = useCallback(
         (index: number, fieldName: keyof ProjectEntry): boolean => {
-            // For now, always returns false. Update if AI enhancement is added.
+             if (fieldName === 'description') { 
+                return isEnhancing('projects', fieldName, index);
+             }
             return false;
         },
-        []
+        [isEnhancing]
     );
 
     const handleCopyCode = useCallback(async () => {
@@ -464,6 +466,7 @@ export default function CVEditorPage() {
              isSaving={isSaving} 
              showFinalButton={true} 
              isEmailVerified={userProfile?.userType === 'creator' ? isEmailVerified : true}
+             enableContentTranslation={false} // Content translation disabled in editor
            />
        </div>
    // eslint-disable-next-line react-hooks/exhaustive-deps

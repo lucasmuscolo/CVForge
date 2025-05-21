@@ -2,4 +2,5 @@ import { config } from 'dotenv';
 config();
 
 import '@/ai/flows/enhance-resume-language.ts';
-// import '@/ai/flows/translate-text-flow.ts'; // Reverted
+import '@/ai/flows/translate-text-flow.ts'; // Re-added for content translation
+

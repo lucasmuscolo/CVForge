@@ -150,7 +150,7 @@
     "namePlaceholder": "Ej., Mi Aplicación Increíble",
     "descriptionLabel": "Descripción",
     "descriptionPlaceholder": "Describe tu proyecto, su propósito y tu rol...",
-    "enhanceDescriptionTooltip": "Mejorar descripción con IA (No activo)",
+    "enhanceDescriptionTooltip": "Mejorar descripción con IA",
     "noProjects": "Aún no has añadido proyectos. Haz clic en \"Añadir Proyecto\" para empezar."
   },
   "cvPreview": {
@@ -173,7 +173,8 @@
     "degree": "Título/Certificado",
     "graduationDate": "Fecha Graduación",
     "institutionName": "Institución",
-    "placeholder": "Empieza a llenar los formularios de la izquierda para ver la vista previa de tu CV aquí."
+    "placeholder": "Empieza a llenar los formularios de la izquierda para ver la vista previa de tu CV aquí.",
+    "translatingContent": "Traduciendo contenido..."
   },
   "finalCvPage": {
     "back": "Volver",
@@ -189,7 +190,9 @@
     "success": "Mejora Exitosa",
     "successDesc": "El texto ha sido actualizado.",
     "failed": "Fallo la Mejora con IA",
-    "failedDesc": "No se pudo mejorar el texto. Por favor, inténtalo de nuevo más tarde."
+    "failedDesc": "No se pudo mejorar el texto. Por favor, inténtalo de nuevo más tarde.",
+    "notActiveTitle": "IA No Activa",
+    "notActiveProjectDesc": "La mejora con IA para descripciones de proyecto aún no está activa."
   },
   "buttons": {
     "toggleLanguage": "Cambiar Idioma"
