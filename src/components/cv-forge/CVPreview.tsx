@@ -56,38 +56,44 @@ export function CVPreview({
 
 
   useEffect(() => {
+    // Deep copy data to originalData when data prop changes
     setOriginalData(JSON.parse(JSON.stringify(data)));
   }, [data]);
 
   useEffect(() => {
     if (!enableContentTranslation || !originalData) {
+      // If translation is disabled or no original data, display data as is
       setDisplayedCvData(JSON.parse(JSON.stringify(originalData || data)));
-      setIsTranslating({}); 
+      setIsTranslating({}); // Reset translation status
       return;
     }
 
     const translateAllFields = async () => {
-      const newDisplayedData = JSON.parse(JSON.stringify(originalData));
+      const newDisplayedData = JSON.parse(JSON.stringify(originalData)); // Start with original
       const newIsTranslatingState: Record<string, boolean> = {};
       
-      // Initialize all potential fields to translating if they have content
+      // Gather all fields that need translation
       const fieldsToTranslate: { key: string, text: string | undefined | null, path: (keyof CvData | string | number)[] }[] = [];
 
+      // Personal Info
       if (originalData.personalInfo) {
         if (originalData.personalInfo.title) fieldsToTranslate.push({ key: 'personalInfo.title', text: originalData.personalInfo.title, path: ['personalInfo', 'title'] });
         if (originalData.personalInfo.summary) fieldsToTranslate.push({ key: 'personalInfo.summary', text: originalData.personalInfo.summary, path: ['personalInfo', 'summary'] });
       }
+      // Skills
       if (Array.isArray(originalData.skills)) {
         originalData.skills.forEach((skill, index) => {
           if (skill) fieldsToTranslate.push({ key: `skills.${index}`, text: skill, path: ['skills', index] });
         });
       }
+      // Projects
       if (Array.isArray(originalData.projects)) {
         originalData.projects.forEach((proj, index) => {
           if (proj.name) fieldsToTranslate.push({ key: `projects.${index}.name`, text: proj.name, path: ['projects', index, 'name'] });
           if (proj.description) fieldsToTranslate.push({ key: `projects.${index}.description`, text: proj.description, path: ['projects', index, 'description'] });
         });
       }
+      // Education
       if (Array.isArray(originalData.education)) {
         originalData.education.forEach((edu, index) => {
           if (edu.degree) fieldsToTranslate.push({ key: `education.${index}.degree`, text: edu.degree, path: ['education', index, 'degree'] });
@@ -95,6 +101,7 @@ export function CVPreview({
           if (edu.details) fieldsToTranslate.push({ key: `education.${index}.details`, text: edu.details, path: ['education', index, 'details'] });
         });
       }
+      // Experience
       if (Array.isArray(originalData.experience)) {
         originalData.experience.forEach((exp, index) => {
           if (exp.jobTitle) fieldsToTranslate.push({ key: `experience.${index}.jobTitle`, text: exp.jobTitle, path: ['experience', index, 'jobTitle'] });
@@ -103,19 +110,23 @@ export function CVPreview({
         });
       }
       
+      // Set initial translating state for all fields that have text
       fieldsToTranslate.forEach(f => { if (f.text && f.text.trim()) newIsTranslatingState[f.key] = true; });
       setIsTranslating(newIsTranslatingState);
 
+      // Perform translations
       const translationPromises = fieldsToTranslate.map(async (field) => {
-        if (!field.text || !field.text.trim()) return { key: field.key, translatedText: field.text || '' };
+        if (!field.text || !field.text.trim()) { // Don't translate empty strings
+          return { key: field.key, translatedText: field.text || '' };
+        }
         try {
           const result = await translateText({ textToTranslate: field.text, targetLanguage: locale });
           return { key: field.key, translatedText: result.translatedText };
-        } catch (error) {
+        } catch (error: any) {
           let errorMessage = `Failed to translate field '${field.key}'.`;
-          if (error instanceof Error && error.message.includes('429')) {
-            errorMessage += ' (Rate limit likely exceeded)';
-          }
+           if (error instanceof Error && error.message.includes('429')) { // Check for rate limit error
+             errorMessage += ` (${t('cvPreview.translatingContent')}: ${t('aiEnhance.rateLimitError') || 'Rate limit likely exceeded'})`; // Use translation key
+           }
           console.warn(errorMessage, 'Original error:', error);
           return { key: field.key, translatedText: field.text }; // Fallback to original text on error
         }
@@ -123,6 +134,7 @@ export function CVPreview({
 
       const results = await Promise.all(translationPromises);
 
+      // Update displayed data and translation status for each field
       results.forEach(result => {
         const path = result.key.split('.');
         let current = newDisplayedData;
@@ -131,18 +143,21 @@ export function CVPreview({
             current[p] = result.translatedText;
           } else {
             current = current[p];
+            if (current === undefined && i < path.length -1) { // Handle cases where path might not exist in newDisplayedData
+              console.warn(`Path part ${p} at index ${i} for key ${result.key} is undefined in newDisplayedData.`);
+              // Potentially create the missing part if appropriate, though for simple assignment it might not be needed
+            }
           }
         });
-         // Update translation status for this specific field
         setIsTranslating(prev => ({ ...prev, [result.key]: false }));
       });
       
-      setDisplayedCvData(newDisplayedData);
+      setDisplayedCvData(newDisplayedData); // Set the fully (attempted) translated data
     };
 
     translateAllFields();
 
-  }, [locale, originalData, enableContentTranslation]);
+  }, [locale, originalData, enableContentTranslation, t]); // Added t to dependencies
 
 
   const renderTextWithLoading = (text: string | undefined, fieldKey: string, defaultTextKey?: string) => {
@@ -300,9 +315,9 @@ export function CVPreview({
                         </span>
                       </div>
                     <div className="flex justify-between items-start mb-1">
-                      <p className="text-sm font-medium">
+                      <div className="text-sm font-medium">
                         {renderTextWithLoading(edu.institution, `education.${index}.institution`, 'cvPreview.institutionName')}
-                      </p>
+                      </div>
                         <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{edu.location || t('cvPreview.location')}</p>
                     </div>
                     { (edu.details || (isTranslating[`education.${index}.details`] && enableContentTranslation)) &&
@@ -335,9 +350,9 @@ export function CVPreview({
                     </div>
 
                     <div className="flex justify-between items-start mb-1">
-                      <p className="text-sm font-medium">
+                      <div className="text-sm font-medium">
                         {renderTextWithLoading(exp.company, `experience.${index}.company`, 'cvPreview.companyName')}
-                      </p>
+                      </div>
                       <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{exp.location || t('cvPreview.location')}</p>
                     </div>
                      {renderFormattedTextWithLoading(exp.responsibilities, `experience.${index}.responsibilities`)}
