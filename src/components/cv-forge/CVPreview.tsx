@@ -188,9 +188,9 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
 
               <div className="text-center sm:text-left flex-grow print:text-left">
                 <h1 className="text-2xl md:text-3xl font-bold mb-1">{safePersonalInfo.name || t('cvPreview.yourName')}</h1>
-                <p className="text-lg text-primary mb-3 print:text-black">
+                <div className="text-lg text-primary mb-3 print:text-black">
                    {renderTextWithLoading(safePersonalInfo.title, originalData?.personalInfo?.title)}
-                </p>
+                </div>
                 <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 text-sm text-muted-foreground print:justify-start print:text-black">
                   {safePersonalInfo.email && (
                     <a href={`mailto:${safePersonalInfo.email}`} className="flex items-center gap-1 hover:text-primary print:text-black print:hover:text-black">
@@ -231,9 +231,9 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
           {safePersonalInfo.summary || (isTranslating && originalData?.personalInfo?.summary) ? (
             <section className="mb-6 break-inside-avoid"> 
                 <h2 className="text-xl font-semibold text-primary border-b pb-1 mb-3 print:text-black print:border-black">{t('cvPreview.summaryTitle')}</h2>
-                <p className="text-sm">
+                <div className="text-sm">
                   {renderTextWithLoading(safePersonalInfo.summary, originalData?.personalInfo?.summary)}
-                </p>
+                </div>
             </section>
           ): null}
 
@@ -279,9 +279,9 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
                         <p className="text-xs text-muted-foreground text-right whitespace-nowrap pl-2 print:text-black">{edu.location || t('cvPreview.location')}</p>
                     </div>
                     { (edu.details || (isTranslating && originalData?.education?.[index]?.details) ) && 
-                        <p className="text-sm italic text-muted-foreground print:text-black">
+                        <div className="text-sm italic text-muted-foreground print:text-black">
                            {renderTextWithLoading(edu.details, originalData?.education?.[index]?.details)}
-                        </p>
+                        </div>
                     }
                   </div>
                 ))}
