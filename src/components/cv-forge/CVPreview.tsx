@@ -107,16 +107,9 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
     const processTranslation = async () => {
       if (!originalData || !isMounted) return;
 
-      // Assuming 'en' is the original/base language. If locale is 'en', show original data.
-      // This is a simplification. A more robust system would store the original entry language.
-      if (locale === 'en') { 
-        setDisplayedCvData(JSON.parse(JSON.stringify(originalData)));
-        setIsTranslating(false);
-        return;
-      }
-
       setIsTranslating(true);
       try {
+        // Always attempt to translate originalData to the current UI locale
         const translated = await translateCvDataFields(originalData, locale);
         if (isMounted) {
           setDisplayedCvData(translated);
@@ -145,15 +138,18 @@ export function CVPreview({ data, showFinalButton = true, onViewFinalClick, isSa
   const safePersonalInfo = personalInfo || { name: '', title: '', email: '', phone: '', linkedin: '', github: '', website: '', summary: '', photoDataUri: '' };
   const safeSkills = skills || [];
 
-  const renderTextWithLoading = (text: string | undefined, originalText: string | undefined) => {
-    if (isTranslating && text === originalText) { // Show skeleton if translating and text hasn't updated yet
+  const renderTextWithLoading = (text: string | undefined, originalTextInCurrentOriginalData: string | undefined) => {
+    // Show skeleton if translating AND the specific text for this field in displayedCvData 
+    // still matches the corresponding text in originalData (meaning it hasn't been updated by translation yet).
+    // This also implies that originalData must be available.
+    if (isTranslating && originalData && text === originalTextInCurrentOriginalData) { 
       return <Skeleton className="h-4 w-3/4 my-1" />;
     }
     return text || '';
   };
 
-  const renderFormattedResponsibilitiesWithLoading = (text: string | undefined, originalText: string | undefined) => {
-      if (isTranslating && text === originalText) {
+  const renderFormattedResponsibilitiesWithLoading = (text: string | undefined, originalTextInCurrentOriginalData: string | undefined) => {
+      if (isTranslating && originalData && text === originalTextInCurrentOriginalData) {
         return (
           <>
             <Skeleton className="h-4 w-full my-1" />
