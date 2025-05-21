@@ -160,8 +160,7 @@
     "degree": "Degree/Certificate",
     "graduationDate": "Graduation Date",
     "institutionName": "Institution Name",
-    "placeholder": "Start filling out the forms on the left to see your CV preview here.",
-    "translatingContent": "Translating content to {lang}..."
+    "placeholder": "Start filling out the forms on the left to see your CV preview here."
   },
   "finalCvPage": {
     "back": "Back",
