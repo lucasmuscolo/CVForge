@@ -1,3 +1,4 @@
+
 // src/components/cv-forge/EducationForm.tsx
 'use client';
 
@@ -11,14 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import type { CvData } from './types';
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+// import { useTranslation } from '@/hooks/useTranslation'; // Removed
 
 interface EducationFormProps {
   form: UseFormReturn<CvData>;
 }
 
 export function EducationForm({ form }: EducationFormProps) {
-  const { t } = useTranslation(); // Get translation function
+  // const { t } = useTranslation(); // Removed
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "education",
@@ -38,15 +39,15 @@ export function EducationForm({ form }: EducationFormProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{t('education.title')}</CardTitle>
+        <CardTitle>Educación</CardTitle>
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={addEducation}
-          className="px-2" // Reduced horizontal padding
+          className="px-2"
         >
-          <PlusCircle className="mr-2 h-4 w-4" /> {t('education.addEducation')}
+          <PlusCircle className="mr-2 h-4 w-4" /> Añadir Educación
         </Button>
       </CardHeader>
       <CardContent>
@@ -60,19 +61,19 @@ export function EducationForm({ form }: EducationFormProps) {
                   size="icon"
                   className="absolute top-2 right-2 text-destructive hover:text-destructive/80"
                   onClick={() => remove(index)}
-                  aria-label={t('education.removeEducation')}
+                  aria-label="Eliminar Educación"
                 >
                   <Trash2 className="h-4 w-4" />
-                   <span className="sr-only">{t('education.removeEducation')}</span>
+                   <span className="sr-only">Eliminar Educación</span>
                 </Button>
                 <FormField
                   control={form.control}
                   name={`education.${index}.degree`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('education.degreeLabel')}</FormLabel>
+                      <FormLabel>Título/Certificado</FormLabel>
                       <FormControl>
-                        <Input placeholder={t('education.degreePlaceholder')} {...field} />
+                        <Input placeholder="Ej., Lic. en Ciencias de la Computación" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -83,9 +84,9 @@ export function EducationForm({ form }: EducationFormProps) {
                   name={`education.${index}.institution`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('education.institutionLabel')}</FormLabel>
+                      <FormLabel>Nombre de la Institución</FormLabel>
                       <FormControl>
-                        <Input placeholder={t('education.institutionPlaceholder')} {...field} />
+                        <Input placeholder="Ej., Universidad de Ejemplo" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -96,9 +97,9 @@ export function EducationForm({ form }: EducationFormProps) {
                   name={`education.${index}.location`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('education.locationLabel')}</FormLabel>
+                      <FormLabel>Ubicación</FormLabel>
                       <FormControl>
-                        <Input placeholder={t('education.locationPlaceholder')} {...field} />
+                        <Input placeholder="Ej., Ciudad, País" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -109,9 +110,9 @@ export function EducationForm({ form }: EducationFormProps) {
                     name={`education.${index}.graduationDate`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('education.graduationDateLabel')}</FormLabel>
+                        <FormLabel>Fecha de Graduación</FormLabel>
                         <FormControl>
-                          <Input type="text" placeholder={t('education.graduationDatePlaceholder')} {...field} />
+                          <Input type="text" placeholder="Ej., Mayo 2019 ó Previsto: Mayo 2025" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -123,9 +124,9 @@ export function EducationForm({ form }: EducationFormProps) {
                   name={`education.${index}.details`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('education.detailsLabel')}</FormLabel>
+                      <FormLabel>Detalles Relevantes (Opcional)</FormLabel>
                       <FormControl>
-                        <Textarea placeholder={t('education.detailsPlaceholder')} {...field} rows={3} />
+                        <Textarea placeholder="Ej., Promedio: 9.5, Mención Honorífica, Tesis: ..." {...field} rows={3} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -135,7 +136,7 @@ export function EducationForm({ form }: EducationFormProps) {
               </div>
             ))}
             {fields.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">{t('education.noEducation')}</p>
+                <p className="text-sm text-muted-foreground text-center py-4">Aún no has añadido historial educativo. Haz clic en "Añadir Educación" para empezar.</p>
              )}
           </div>
         </Form>

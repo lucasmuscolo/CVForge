@@ -11,16 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { X, PlusCircle } from 'lucide-react';
 import type { CvData } from './types';
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+// import { useTranslation } from '@/hooks/useTranslation'; // Removed
 
 interface SkillsFormProps {
   form: UseFormReturn<CvData>;
 }
 
 export function SkillsForm({ form }: SkillsFormProps) {
-  const { t } = useTranslation(); // Get translation function
+  // const { t } = useTranslation(); // Removed
   const [currentSkill, setCurrentSkill] = useState('');
-  // Watch the skills array from the form state to display them
   const skills = form.watch('skills') || [];
 
   const handleAddSkill = () => {
@@ -28,10 +27,9 @@ export function SkillsForm({ form }: SkillsFormProps) {
     if (skillToAdd && !skills.includes(skillToAdd)) {
       const updatedSkills = [...skills, skillToAdd];
       form.setValue('skills', updatedSkills, { shouldValidate: true, shouldDirty: true });
-      setCurrentSkill(''); // Clear input after adding
+      setCurrentSkill('');
     } else if (skills.includes(skillToAdd)) {
-        // Optional: Add toast notification if skill already exists
-        console.warn(`Skill "${skillToAdd}" already exists.`);
+        console.warn(`La habilidad "${skillToAdd}" ya existe.`);
     }
   };
 
@@ -42,7 +40,7 @@ export function SkillsForm({ form }: SkillsFormProps) {
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
-      event.preventDefault(); // Prevent form submission on Enter
+      event.preventDefault();
       handleAddSkill();
     }
   };
@@ -50,34 +48,31 @@ export function SkillsForm({ form }: SkillsFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('skills.title')}</CardTitle>
+        <CardTitle>Habilidades</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <div className="space-y-4">
-            {/* Skill Input */}
             <FormItem>
-              <FormLabel>{t('skills.addSkillLabel')}</FormLabel>
+              <FormLabel>Añadir Habilidad</FormLabel>
               <div className="flex items-center gap-2">
                 <FormControl>
                   <Input
-                    placeholder={t('skills.addSkillPlaceholder')}
+                    placeholder="Ej., JavaScript, Python, Gestión de Proyectos"
                     value={currentSkill}
                     onChange={(e) => setCurrentSkill(e.target.value)}
                     onKeyDown={handleKeyDown}
                   />
                 </FormControl>
-                <Button type="button" size="icon" onClick={handleAddSkill} aria-label={t('skills.addSkillButton')}>
+                <Button type="button" size="icon" onClick={handleAddSkill} aria-label="Añadir Habilidad">
                   <PlusCircle className="h-4 w-4" />
-                   <span className="sr-only">{t('skills.addSkillButton')}</span>
+                   <span className="sr-only">Añadir Habilidad</span>
                 </Button>
               </div>
-              {/* You might want a FormMessage here if you add specific validation for the input field */}
             </FormItem>
 
-            {/* Display Skills */}
             <div className="space-y-2">
-              <FormLabel>{t('skills.yourSkillsLabel')}</FormLabel>
+              <FormLabel>Tus Habilidades</FormLabel>
               {skills.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {skills.map((skill) => (
@@ -87,7 +82,7 @@ export function SkillsForm({ form }: SkillsFormProps) {
                         type="button"
                         onClick={() => handleRemoveSkill(skill)}
                         className="rounded-full hover:bg-muted-foreground/20 focus:outline-none focus:ring-1 focus:ring-ring"
-                        aria-label={t('skills.removeSkill', { skill: skill })}
+                        aria-label={`Eliminar ${skill}`}
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -95,9 +90,8 @@ export function SkillsForm({ form }: SkillsFormProps) {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">{t('skills.noSkills')}</p>
+                <p className="text-sm text-muted-foreground">Aún no has añadido habilidades.</p>
               )}
-               {/* General FormMessage for the 'skills' array if needed (e.g., minimum number of skills) */}
                 <FormField
                   control={form.control}
                   name="skills"
@@ -110,5 +104,3 @@ export function SkillsForm({ form }: SkillsFormProps) {
     </Card>
   );
 }
-
-  

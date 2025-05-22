@@ -14,7 +14,7 @@ import { PersonalInfoForm } from '@/components/cv-forge/PersonalInfoForm';
 import { ExperienceForm } from '@/components/cv-forge/ExperienceForm';
 import { EducationForm } from '@/components/cv-forge/EducationForm';
 import { SkillsForm } from '@/components/cv-forge/SkillsForm';
-import { ProjectForm } from '@/components/cv-forge/ProjectForm'; // Import ProjectForm
+import { ProjectForm } from '@/components/cv-forge/ProjectForm';
 import { CVPreview } from '@/components/cv-forge/CVPreview';
 import type { CvData, PersonalInfo, ExperienceEntry, EducationEntry, ProjectEntry } from '@/components/cv-forge/types';
 import { enhanceResumeLanguage } from '@/ai/flows/enhance-resume-language';
@@ -27,46 +27,44 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Copy, AlertTriangle } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useTranslation } from '@/hooks/useTranslation';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-
+// Removed LanguageSwitcher and useTranslation
 
 // Zod Schemas
 const personalInfoSchema = z.object({
-  name: z.string().min(1, 'Full name is required'),
-  title: z.string().min(1, 'Professional title is required'),
+  name: z.string().min(1, 'El nombre completo es obligatorio'),
+  title: z.string().min(1, 'El título profesional es obligatorio'),
   phone: z.string().optional(),
-  email: z.string().email('Invalid email address').min(1, 'Email is required'),
-  linkedin: z.string().url('Invalid URL').optional().or(z.literal('')),
-  github: z.string().url('Invalid URL').optional().or(z.literal('')),
-  website: z.string().url('Invalid URL').optional().or(z.literal('')),
+  email: z.string().email('Dirección de correo electrónico inválida').min(1, 'El correo electrónico es obligatorio'),
+  linkedin: z.string().url('URL inválida').optional().or(z.literal('')),
+  github: z.string().url('URL inválida').optional().or(z.literal('')),
+  website: z.string().url('URL inválida').optional().or(z.literal('')),
   summary: z.string().optional(),
   photoDataUri: z.string().optional(),
 });
 
 const experienceEntrySchema = z.object({
   id: z.string(),
-  jobTitle: z.string().min(1, 'Job title is required'),
-  company: z.string().min(1, 'Company name is required'),
+  jobTitle: z.string().min(1, 'El puesto de trabajo es obligatorio'),
+  company: z.string().min(1, 'El nombre de la empresa es obligatorio'),
   location: z.string().optional(),
-  startDate: z.string().min(1, 'Start date is required'),
-  endDate: z.string().min(1, 'End date is required (use "Present" if current)'),
+  startDate: z.string().min(1, 'La fecha de inicio es obligatoria'),
+  endDate: z.string().min(1, 'La fecha de fin es obligatoria (usa "Actual" si es el actual)'),
   responsibilities: z.string().optional(),
 });
 
 const educationEntrySchema = z.object({
   id: z.string(),
-  degree: z.string().min(1, 'Degree/Certificate is required'),
-  institution: z.string().min(1, 'Institution name is required'),
+  degree: z.string().min(1, 'El título/certificado es obligatorio'),
+  institution: z.string().min(1, 'El nombre de la institución es obligatorio'),
   location: z.string().optional(),
-  graduationDate: z.string().min(1, 'Graduation date is required'),
+  graduationDate: z.string().min(1, 'La fecha de graduación es obligatoria'),
   details: z.string().optional(),
 });
 
 const projectEntrySchema = z.object({
   id: z.string(),
-  name: z.string().min(1, 'Project name is required'),
-  description: z.string().min(1, 'Project description is required'),
+  name: z.string().min(1, 'El nombre del proyecto es obligatorio'),
+  description: z.string().min(1, 'La descripción del proyecto es obligatoria'),
 });
 
 const cvDataSchema = z.object({
@@ -74,7 +72,7 @@ const cvDataSchema = z.object({
   experience: z.array(experienceEntrySchema),
   education: z.array(educationEntrySchema),
   skills: z.array(z.string()).optional(),
-  projects: z.array(projectEntrySchema).optional(), // Added projects
+  projects: z.array(projectEntrySchema).optional(),
 });
 
 // Default empty state
@@ -85,12 +83,12 @@ const defaultCvData: CvData = {
   experience: [],
   education: [],
   skills: [],
-  projects: [], // Added projects
+  projects: [],
 };
 
 export default function CVEditorPage() {
   const { currentUser, loading: authLoading } = useAuth();
-  const { t, locale } = useTranslation();
+  // const { t, locale } = useTranslation(); // Removed locale
   const router = useRouter();
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
   const [initialCvData, setInitialCvData] = useState<CvData>(defaultCvData);
@@ -149,7 +147,7 @@ export default function CVEditorPage() {
                 experience: (loadedCvData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
                 education: (loadedCvData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
                 skills: Array.isArray(loadedCvData.skills) ? loadedCvData.skills : [],
-                projects: (loadedCvData.projects || []).map(proj => ({ ...proj, id: proj.id || crypto.randomUUID() })), // Ensure projects are loaded
+                projects: (loadedCvData.projects || []).map(proj => ({ ...proj, id: proj.id || crypto.randomUUID() })),
             } : defaultCvData;
             console.log('[CVEditorPage] CV data to set:', cvDataToSet);
             setCvData(cvDataToSet);
@@ -168,7 +166,7 @@ export default function CVEditorPage() {
 
           } catch (error) {
             console.error("[CVEditorPage] Failed to load user data from Firestore:", error);
-            toast({ title: t('cvForge.loadingDataError'), description: t('cvForge.loadingDataErrorDesc'), variant: "destructive" });
+            toast({ title: "Error al Cargar Datos", description: "No se pudieron cargar los datos de tu CV desde el servidor.", variant: "destructive" });
             setCvData(defaultCvData);
             setInitialCvData(JSON.parse(JSON.stringify(defaultCvData))); 
             formReset(defaultCvData);
@@ -194,7 +192,7 @@ export default function CVEditorPage() {
         setIsLoaded(true);
       }
     }
-  }, [currentUser, authLoading, isLoaded, formReset, toast, t, router]);
+  }, [currentUser, authLoading, isLoaded, formReset, toast, router]);
 
 
    useEffect(() => {
@@ -208,7 +206,7 @@ export default function CVEditorPage() {
            experience: currentData.experience.map(exp => ({ ...exp })),
            education: currentData.education.map(edu => ({ ...edu })),
            skills: Array.isArray(currentData.skills) ? currentData.skills : [],
-           projects: currentData.projects.map(proj => ({ ...proj })), // Ensure projects are watched
+           projects: currentData.projects.map(proj => ({ ...proj })),
          };
          setCvData(dataForPreview); 
        }
@@ -220,26 +218,26 @@ export default function CVEditorPage() {
   const handleLogout = useCallback(async () => {
     try {
       await signOut(auth);
-      toast({ title: t('loginPage.loggedOut'), description: t('loginPage.loggedOutDesc') });
+      toast({ title: "Sesión Cerrada", description: "Has cerrado sesión exitosamente." });
       router.push('/');
     } catch (error) {
       console.error('Logout failed:', error);
       toast({
-        title: t('loginPage.logoutFailed'),
-        description: t('loginPage.logoutFailedDesc'),
+        title: "Fallo al Cerrar Sesión",
+        description: "Ocurrió un error al cerrar sesión.",
         variant: 'destructive',
       });
     }
-  }, [toast, t, router]);
+  }, [toast, router]);
 
   const handleSaveAndNavigate = async () => {
     if (!currentUser) {
-        toast({ title: t('cvForge.notLoggedIn'), description: t('cvForge.notLoggedInDesc'), variant: "destructive" });
+        toast({ title: "No Has Iniciado Sesión", description: "Por favor, inicia sesión para guardar tu CV.", variant: "destructive" });
         return;
     }
 
     if (userProfile?.userType === 'creator' && !isEmailVerified) {
-        toast({ title: t('cvForge.emailNotVerifiedTitle'), description: t('cvForge.verifyEmailToProceed'), variant: "destructive" });
+        toast({ title: "Verificación de Correo Requerida", description: "Por favor, verifica tu correo electrónico para guardar o ver tu CV final.", variant: "destructive" });
         return;
     }
 
@@ -247,7 +245,7 @@ export default function CVEditorPage() {
     try {
         const isValid = await form.trigger();
         if (!isValid) {
-             toast({ title: t('cvForge.validationError'), description: t('cvForge.validationErrorDesc'), variant: "destructive" });
+             toast({ title: "Error de Validación", description: "Por favor, revisa el formulario en busca de errores.", variant: "destructive" });
              setIsSaving(false);
              return;
         }
@@ -258,7 +256,7 @@ export default function CVEditorPage() {
          experience: currentFormData.experience.map(exp => ({ ...exp })),
          education: currentFormData.education.map(edu => ({ ...edu })),
          skills: Array.isArray(currentFormData.skills) ? currentFormData.skills : [],
-         projects: Array.isArray(currentFormData.projects) ? currentFormData.projects.map(proj => ({ ...proj })) : [], // Ensure projects are saved
+         projects: Array.isArray(currentFormData.projects) ? currentFormData.projects.map(proj => ({ ...proj })) : [],
        };
 
       const hasChanges = JSON.stringify(dataToSave) !== JSON.stringify(initialCvData);
@@ -266,9 +264,9 @@ export default function CVEditorPage() {
       if (hasChanges) {
         await saveCvData(currentUser.uid, dataToSave);
         setInitialCvData(JSON.parse(JSON.stringify(dataToSave))); 
-        toast({ title: t('cvForge.cvSavedSuccess'), description: t('cvForge.cvSavedSuccessDesc') });
+        toast({ title: "CV Guardado Exitosamente", description: "Tus cambios han sido guardados. Navegando a la vista previa final..." });
       } else {
-        toast({ title: t('cvForge.noChangesDetected'), description: t('cvForge.noChangesDetectedDesc') });
+        toast({ title: "No Se Detectaron Cambios", description: "Navegando a la vista previa final sin guardar." });
       }
       
       router.push('/cv/final'); 
@@ -276,8 +274,8 @@ export default function CVEditorPage() {
     } catch (error) {
       console.error("Failed to save CV data to Firestore or navigate:", error);
       toast({
-        title: t('cvForge.errorProcessing'),
-        description: t('cvForge.errorProcessingDesc'),
+        title: "Error al Procesar Solicitud",
+        description: "Ocurrió un error al guardar o navegar. Por favor, inténtalo de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -302,30 +300,35 @@ export default function CVEditorPage() {
    ) => {
       const key = getEnhancingKey(section, fieldName, index);
       if (!currentText?.trim()) {
-         toast({ title: t('aiEnhance.inputRequired'), description: t('aiEnhance.inputRequiredDesc'), variant: "destructive" });
+         toast({ title: "Texto Requerido", description: "Por favor, ingresa texto para mejorar.", variant: "destructive" });
          return;
        }
 
       setEnhancingState(prev => ({ ...prev, [key]: true }));
       try {
-         const result = await enhanceResumeLanguage({ sectionText: currentText, language: locale });
+         // Forcing 'es' as language for enhancement on this page
+         const result = await enhanceResumeLanguage({ sectionText: currentText, language: 'es' });
          if (result?.enhancedText) {
            form.setValue(fieldName as any, result.enhancedText, { shouldValidate: true, shouldDirty: true });
-           toast({ title: t('aiEnhance.success'), description: t('aiEnhance.successDesc') });
+           toast({ title: "Mejora Exitosa", description: "El texto ha sido actualizado." });
          } else {
            throw new Error("AI did not return enhanced text.");
          }
-     } catch (error) {
+     } catch (error: any) {
        console.error("AI enhancement failed:", error);
+       let desc = "No se pudo mejorar el texto. Por favor, inténtalo de nuevo más tarde.";
+       if (error.message && error.message.includes('429')) {
+           desc = "El servicio de IA está ocupado. Por favor, inténtalo de nuevo en un momento.";
+       }
        toast({
-         title: t('aiEnhance.failed'),
-         description: t('aiEnhance.failedDesc'),
+         title: "Fallo la Mejora con IA",
+         description: desc,
          variant: "destructive",
        });
      } finally {
        setEnhancingState(prev => ({ ...prev, [key]: false }));
      }
-   }, [form, toast, t, locale]);
+   }, [form, toast]); // locale removed from dependencies
 
 
   const enhancePersonalInfo = useCallback(
@@ -347,9 +350,9 @@ export default function CVEditorPage() {
    const enhanceProjectText = useCallback(
     async (index: number, fieldName: keyof ProjectEntry, currentText: string) => {
       console.log('AI enhancement for projects not yet implemented.', index, fieldName, currentText);
-      toast({ title: t('aiEnhance.notActiveTitle'), description: t('aiEnhance.notActiveProjectDesc'), variant: 'default' });
+      toast({ title: "IA No Activa", description: "La mejora con IA para descripciones de proyecto aún no está activa.", variant: 'default' });
     },
-    [toast, t] 
+    [toast] 
   );
 
 
@@ -396,35 +399,35 @@ export default function CVEditorPage() {
         if (userProfile && userProfile.userType === 'creator' && userProfile.cvCode) {
         try {
             await navigator.clipboard.writeText(userProfile.cvCode);
-            toast({ title: t('cvForge.codeCopied'), description: t('cvForge.codeCopiedDesc') });
+            toast({ title: "¡Código Copiado!", description: "Tu código de CV ha sido copiado al portapapeles." });
         } catch (err) {
             console.error('Failed to copy CV code: ', err);
-            toast({ title: t('cvForge.copyFailed'), description: t('cvForge.copyFailedDesc'), variant: 'destructive' });
+            toast({ title: "Fallo al Copiar", description: "No se pudo copiar el código. Por favor, inténtalo de nuevo o cópialo manualmente.", variant: 'destructive' });
         }
         }
-    }, [userProfile, toast, t]);
+    }, [userProfile, toast]);
 
 
    const inputSection = useMemo(() => (
        <div className="space-y-6">
          <div className="flex justify-between items-center gap-2">
-            <h1 className="text-2xl font-bold text-primary">{t('cvForge.title')}</h1>
+            <h1 className="text-2xl font-bold text-primary">Editor de CVForge</h1>
             <div className="flex items-center gap-2">
-              <LanguageSwitcher />
+              {/* <LanguageSwitcher /> Removed */}
               {currentUser && (
                    <Button onClick={handleLogout} variant="outline" size="sm">
-                       <LogOut className="mr-2 h-4 w-4" /> {t('cvForge.logout')}
+                       <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
                    </Button>
               )}
              </div>
          </div>
 
          <div className="flex justify-between items-center gap-2">
-             <p className="text-muted-foreground flex-grow">{t('cvForge.description')}</p>
+             <p className="text-muted-foreground flex-grow">Crea y refina tu CV profesional.</p>
              {userProfile && userProfile.userType === 'creator' && userProfile.cvCode && (
                  <div className="flex items-center gap-1 p-1 border border-input rounded-md bg-card shadow-sm shrink-0">
                      <code className="font-mono text-xs px-2 py-1 bg-muted rounded-sm">{userProfile.cvCode}</code>
-                     <Button variant="ghost" size="icon" onClick={handleCopyCode} aria-label={t('cvForge.copyCodeButton')} className="h-6 w-6">
+                     <Button variant="ghost" size="icon" onClick={handleCopyCode} aria-label="Copiar Código" className="h-6 w-6">
                          <Copy className="h-3 w-3" />
                      </Button>
                  </div>
@@ -434,9 +437,9 @@ export default function CVEditorPage() {
         {currentUser && userProfile?.userType === 'creator' && !isEmailVerified && (
             <Alert variant="default" className="border-yellow-500 bg-yellow-50 text-yellow-700">
                 <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                <AlertTitle className="font-semibold text-yellow-800">{t('cvForge.emailNotVerifiedAlertTitle')}</AlertTitle>
+                <AlertTitle className="font-semibold text-yellow-800">Verificación de Correo Requerida</AlertTitle>
                 <AlertDescription>
-                    {t('cvForge.emailNotVerifiedAlertDescCreator')}
+                    Por favor, revisa tu bandeja de entrada y haz clic en el enlace de verificación enviado a tu dirección de correo para usar CVForge completamente.
                 </AlertDescription>
             </Alert>
         )}
@@ -452,21 +455,22 @@ export default function CVEditorPage() {
          <EducationForm form={form} />
        </div>
      // eslint-disable-next-line react-hooks/exhaustive-deps
-     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, enhanceProjectText, isEnhancingProject, currentUser, t, handleLogout, userProfile, handleCopyCode, isEmailVerified]); 
+     ), [form, enhancePersonalInfo, isEnhancingPersonalInfo, enhanceExperienceText, isEnhancingExperience, enhanceProjectText, isEnhancingProject, currentUser, handleLogout, userProfile, handleCopyCode, isEmailVerified]); 
 
    const previewSection = useMemo(() => (
        <div className="md:sticky md:top-6 print:static print:top-auto">
-           <h2 className="text-xl font-semibold mb-4 text-primary print:hidden">{t('cvForge.livePreview')}</h2>
+           <h2 className="text-xl font-semibold mb-4 text-primary print:hidden">Vista Previa en Vivo</h2>
            <CVPreview
              data={cvData}
              onViewFinalClick={handleSaveAndNavigate} 
              isSaving={isSaving} 
              showFinalButton={true} 
              isEmailVerified={userProfile?.userType === 'creator' ? isEmailVerified : true}
+             // enableContentTranslation is false by default, so CVPreview uses global locale for its own labels
            />
        </div>
    // eslint-disable-next-line react-hooks/exhaustive-deps
-   ), [cvData, isSaving, t, handleSaveAndNavigate, isEmailVerified, userProfile?.userType]); 
+   ), [cvData, isSaving, handleSaveAndNavigate, isEmailVerified, userProfile?.userType]); 
 
 
    if (authLoading || (!isLoaded && currentUser)) {
@@ -494,7 +498,7 @@ export default function CVEditorPage() {
    }
 
    if (!currentUser && !authLoading) {
-       return <div className="flex justify-center items-center min-h-screen">{t('cvForge.redirectingLogin')}</div>;
+       return <div className="flex justify-center items-center min-h-screen">Redirigiendo al inicio de sesión...</div>;
    }
 
 

@@ -11,9 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { PlusCircle, Trash2 } from 'lucide-react';
-import type { CvData, ProjectEntry } from './types'; // Ensure ProjectEntry is imported
+import type { CvData, ProjectEntry } from './types';
 import { AIButton } from './AIButton';
-import { useTranslation } from '@/hooks/useTranslation';
+// import { useTranslation } from '@/hooks/useTranslation'; // Removed
 
 interface ProjectFormProps {
   form: UseFormReturn<CvData>;
@@ -22,7 +22,7 @@ interface ProjectFormProps {
 }
 
 export function ProjectForm({ form, enhanceText, isEnhancing }: ProjectFormProps) {
-  const { t } = useTranslation();
+  // const { t } = useTranslation(); // Removed
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "projects",
@@ -39,7 +39,7 @@ export function ProjectForm({ form, enhanceText, isEnhancing }: ProjectFormProps
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{t('projects.title')}</CardTitle>
+        <CardTitle>Proyectos</CardTitle>
         <Button
           type="button"
           variant="outline"
@@ -47,7 +47,7 @@ export function ProjectForm({ form, enhanceText, isEnhancing }: ProjectFormProps
           onClick={addProject}
           className="px-2"
         >
-          <PlusCircle className="mr-2 h-4 w-4" /> {t('projects.addProject')}
+          <PlusCircle className="mr-2 h-4 w-4" /> Añadir Proyecto
         </Button>
       </CardHeader>
       <CardContent>
@@ -61,10 +61,10 @@ export function ProjectForm({ form, enhanceText, isEnhancing }: ProjectFormProps
                   size="icon"
                   className="absolute top-2 right-2 text-destructive hover:text-destructive/80"
                   onClick={() => remove(index)}
-                  aria-label={t('projects.removeProject')}
+                  aria-label="Eliminar Proyecto"
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">{t('projects.removeProject')}</span>
+                  <span className="sr-only">Eliminar Proyecto</span>
                 </Button>
 
                 <FormField
@@ -72,9 +72,9 @@ export function ProjectForm({ form, enhanceText, isEnhancing }: ProjectFormProps
                   name={`projects.${index}.name`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('projects.nameLabel')}</FormLabel>
+                      <FormLabel>Nombre del Proyecto</FormLabel>
                       <FormControl>
-                        <Input placeholder={t('projects.namePlaceholder')} {...field} />
+                        <Input placeholder="Ej., Mi Aplicación Increíble" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -85,17 +85,16 @@ export function ProjectForm({ form, enhanceText, isEnhancing }: ProjectFormProps
                   name={`projects.${index}.description`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t('projects.descriptionLabel')}</FormLabel>
+                      <FormLabel>Descripción</FormLabel>
                       <div className="relative">
                         <FormControl>
-                          <Textarea placeholder={t('projects.descriptionPlaceholder')} {...field} rows={4} />
+                          <Textarea placeholder="Describe tu proyecto, su propósito y tu rol..." {...field} rows={4} />
                         </FormControl>
-                        {/* AIButton for project description (currently non-functional as per parent component's placeholder) */}
                         <AIButton
                           onClick={() => enhanceText(index, 'description', field.value || '')}
                           isLoading={isEnhancing(index, 'description')}
                           className="absolute bottom-2 right-2"
-                          tooltipContent={t('projects.enhanceDescriptionTooltip')}
+                          tooltipContent="Mejorar descripción con IA"
                         />
                       </div>
                       <FormMessage />
@@ -106,7 +105,7 @@ export function ProjectForm({ form, enhanceText, isEnhancing }: ProjectFormProps
               </div>
             ))}
             {fields.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">{t('projects.noProjects')}</p>
+              <p className="text-sm text-muted-foreground text-center py-4">Aún no has añadido proyectos. Haz clic en "Añadir Proyecto" para empezar.</p>
             )}
           </div>
         </Form>
