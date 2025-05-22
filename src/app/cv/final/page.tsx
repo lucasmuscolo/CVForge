@@ -184,11 +184,9 @@ export default function FinalCVPage() {
             <CVPreview 
               data={cvData} 
               showFinalButton={false} 
-              enableContentTranslation={true} // Content translation enabled here
             />
         </div>
       </div>
     </div>
   );
 }
-

@@ -173,8 +173,7 @@
     "degree": "Degree/Certificate",
     "graduationDate": "Graduation Date",
     "institutionName": "Institution Name",
-    "placeholder": "Start filling out the forms on the left to see your CV preview here.",
-    "translatingContent": "Translating content..."
+    "placeholder": "Start filling out the forms on the left to see your CV preview here."
   },
   "finalCvPage": {
     "back": "Back",
@@ -192,7 +191,8 @@
     "failed": "AI Enhancement Failed",
     "failedDesc": "Could not enhance the text. Please try again later.",
     "notActiveTitle": "AI Not Active",
-    "notActiveProjectDesc": "AI enhancement for project descriptions is not yet active."
+    "notActiveProjectDesc": "AI enhancement for project descriptions is not yet active.",
+    "rateLimitError": "AI service is busy. Please try again in a moment."
   },
   "buttons": {
     "toggleLanguage": "Toggle Language"

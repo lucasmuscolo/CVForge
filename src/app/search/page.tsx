@@ -98,8 +98,8 @@ export default function RecruiterSearchPage() {
           console.error("[SearchPage useEffect] Error fetching user profile:", error);
           setIsRecruiter(false);
           stableToast({
-            title: stableT('cvForge.errorSaving'), // This was 'errorSaving', perhaps should be a more generic error
-            description: stableT('loginPage.signUpFailedDesc'), // This was specific to signup
+            title: stableT('cvForge.errorSaving'), 
+            description: stableT('loginPage.signUpFailedDesc'), 
             variant: 'destructive',
           });
           stableRouterPush('/');
@@ -115,12 +115,12 @@ export default function RecruiterSearchPage() {
           setLocalLoading(false);
       }
     }
-  }, [currentUser, authLoading, profileChecked, stableRouterPush, stableToast, stableT, localLoading]); // Added localLoading
+  }, [currentUser, authLoading, profileChecked, stableRouterPush, stableToast, stableT, localLoading]); 
 
 
   const handleLogoutClick = useCallback(() => {
     performLogout(auth, toast, t);
-    router.push('/login'); // Redirect to login after logout
+    router.push('/login'); 
   }, [toast, t, router]);
 
   const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -212,7 +212,6 @@ export default function RecruiterSearchPage() {
 
   if (!isRecruiter) {
     console.log('[SearchPage render] Not a recruiter or profile not confirmed as recruiter, rendering access denied.');
-    // This case should ideally be handled by redirection in useEffect, but good to have a fallback.
     return <div className="flex justify-center items-center min-h-screen">{t('searchPage.accessDenied')}</div>;
   }
 
@@ -287,7 +286,6 @@ export default function RecruiterSearchPage() {
 
         {!isSearching && searchedCvData === undefined && !searchMessage && isEmailVerified && (
              <div className="text-center py-10 text-muted-foreground">
-                  {/* Prompt to search if nothing has been searched yet */}
              </div>
         )}
 
@@ -298,7 +296,6 @@ export default function RecruiterSearchPage() {
               <CVPreview 
                 data={searchedCvData} 
                 showFinalButton={false} 
-                enableContentTranslation={true} // Content translation enabled here
               />
               <div className="mt-6 pt-6 border-t flex flex-col sm:flex-row justify-center items-center gap-4 print:hidden">
                 <Button onClick={handleDownloadMarkdown} variant="outline">
@@ -321,4 +318,3 @@ export default function RecruiterSearchPage() {
     </div>
   );
 }
-

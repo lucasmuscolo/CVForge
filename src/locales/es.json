@@ -173,8 +173,7 @@
     "degree": "Título/Certificado",
     "graduationDate": "Fecha Graduación",
     "institutionName": "Institución",
-    "placeholder": "Empieza a llenar los formularios de la izquierda para ver la vista previa de tu CV aquí.",
-    "translatingContent": "Traduciendo contenido..."
+    "placeholder": "Empieza a llenar los formularios de la izquierda para ver la vista previa de tu CV aquí."
   },
   "finalCvPage": {
     "back": "Volver",
@@ -192,7 +191,8 @@
     "failed": "Fallo la Mejora con IA",
     "failedDesc": "No se pudo mejorar el texto. Por favor, inténtalo de nuevo más tarde.",
     "notActiveTitle": "IA No Activa",
-    "notActiveProjectDesc": "La mejora con IA para descripciones de proyecto aún no está activa."
+    "notActiveProjectDesc": "La mejora con IA para descripciones de proyecto aún no está activa.",
+    "rateLimitError": "El servicio de IA está ocupado. Por favor, inténtalo de nuevo en un momento."
   },
   "buttons": {
     "toggleLanguage": "Cambiar Idioma"
