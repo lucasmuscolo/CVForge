@@ -173,7 +173,8 @@
     "degree": "Título/Certificado",
     "graduationDate": "Fecha Graduación",
     "institutionName": "Institución",
-    "placeholder": "Empieza a llenar los formularios de la izquierda para ver la vista previa de tu CV aquí."
+    "placeholder": "Empieza a llenar los formularios de la izquierda para ver la vista previa de tu CV aquí.",
+    "translatingContent": "Traduciendo contenido..."
   },
   "finalCvPage": {
     "back": "Volver",

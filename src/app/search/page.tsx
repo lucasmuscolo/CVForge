@@ -11,7 +11,7 @@ import { CVPreview } from '@/components/cv-forge/CVPreview';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogOut, Search, Loader2, AlertTriangle, Download, Printer } from 'lucide-react'; // Added Printer
+import { LogOut, Search, Loader2, AlertTriangle, Download, Printer } from 'lucide-react'; 
 import { auth } from '@/lib/firebase/config';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -295,7 +295,8 @@ export default function RecruiterSearchPage() {
             <CardContent className="pt-6"> 
               <CVPreview 
                 data={searchedCvData} 
-                showFinalButton={false} 
+                showFinalButton={false}
+                enableContentTranslation={true} // Enable content translation here 
               />
               <div className="mt-6 pt-6 border-t flex flex-col sm:flex-row justify-center items-center gap-4 print:hidden">
                 <Button onClick={handleDownloadMarkdown} variant="outline">

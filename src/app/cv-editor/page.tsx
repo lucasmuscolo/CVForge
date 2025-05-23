@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Copy, AlertTriangle } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-// Removed LanguageSwitcher and useTranslation
+
 
 // Zod Schemas
 const personalInfoSchema = z.object({
@@ -88,7 +88,6 @@ const defaultCvData: CvData = {
 
 export default function CVEditorPage() {
   const { currentUser, loading: authLoading } = useAuth();
-  // const { t, locale } = useTranslation(); // Removed locale
   const router = useRouter();
   const [cvData, setCvData] = useState<CvData>(defaultCvData);
   const [initialCvData, setInitialCvData] = useState<CvData>(defaultCvData);
@@ -328,7 +327,7 @@ export default function CVEditorPage() {
      } finally {
        setEnhancingState(prev => ({ ...prev, [key]: false }));
      }
-   }, [form, toast]); // locale removed from dependencies
+   }, [form, toast]); 
 
 
   const enhancePersonalInfo = useCallback(
@@ -349,10 +348,14 @@ export default function CVEditorPage() {
    
    const enhanceProjectText = useCallback(
     async (index: number, fieldName: keyof ProjectEntry, currentText: string) => {
-      console.log('AI enhancement for projects not yet implemented.', index, fieldName, currentText);
-      toast({ title: "IA No Activa", description: "La mejora con IA para descripciones de proyecto aún no está activa.", variant: 'default' });
+      if (fieldName === 'description') {
+        await enhanceText('projects', `projects.${index}.${fieldName}`, currentText || '', index);
+      } else {
+        console.log('AI enhancement for project names not implemented.');
+        toast({ title: "IA No Activa", description: "La mejora con IA para nombres de proyecto aún no está activa.", variant: 'default' });
+      }
     },
-    [toast] 
+    [enhanceText, toast] 
   );
 
 
@@ -413,7 +416,6 @@ export default function CVEditorPage() {
          <div className="flex justify-between items-center gap-2">
             <h1 className="text-2xl font-bold text-primary">Editor de CVForge</h1>
             <div className="flex items-center gap-2">
-              {/* <LanguageSwitcher /> Removed */}
               {currentUser && (
                    <Button onClick={handleLogout} variant="outline" size="sm">
                        <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
@@ -466,7 +468,7 @@ export default function CVEditorPage() {
              isSaving={isSaving} 
              showFinalButton={true} 
              isEmailVerified={userProfile?.userType === 'creator' ? isEmailVerified : true}
-             // enableContentTranslation is false by default, so CVPreview uses global locale for its own labels
+             enableContentTranslation={false} // Ensure translation is disabled in editor
            />
        </div>
    // eslint-disable-next-line react-hooks/exhaustive-deps

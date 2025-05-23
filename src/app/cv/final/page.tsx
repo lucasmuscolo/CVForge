@@ -7,13 +7,13 @@ import { useRouter } from 'next/navigation';
 import { CVPreview } from '@/components/cv-forge/CVPreview';
 import type { CvData } from '@/components/cv-forge/types';
 import { Button } from '@/components/ui/button';
-import { Printer, ArrowLeft, Loader2, Copy } from 'lucide-react'; // Added Copy and Loader2
+import { Printer, ArrowLeft, Loader2, Copy } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext'; // Import useAuth
-import { getCvData, getUserProfile, type UserProfile } from '@/lib/firebase/firestore'; // Import Firestore helpers
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'; // Import LanguageSwitcher
+import { useAuth } from '@/context/AuthContext'; 
+import { getCvData, getUserProfile, type UserProfile } from '@/lib/firebase/firestore'; 
+import { Skeleton } from '@/components/ui/skeleton'; 
+import { useTranslation } from '@/hooks/useTranslation'; 
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'; 
 
 // Default empty state
 const defaultCvData: CvData = {
@@ -25,12 +25,12 @@ const defaultCvData: CvData = {
 };
 
 export default function FinalCVPage() {
-  const { currentUser, loading: authLoading } = useAuth(); // Get user and loading state
-  const { t } = useTranslation(); // Get translation function
+  const { currentUser, loading: authLoading } = useAuth(); 
+  const { t } = useTranslation(); 
   const router = useRouter();
-  const [cvData, setCvData] = useState<CvData | null>(null); // Start with null to indicate loading
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null); // State for user profile
-  const [isLoadingData, setIsLoadingData] = useState(true); // Separate loading state for Firestore data
+  const [cvData, setCvData] = useState<CvData | null>(null); 
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null); 
+  const [isLoadingData, setIsLoadingData] = useState(true); 
   const { toast } = useToast();
 
    // Redirect unauthenticated users
@@ -43,20 +43,20 @@ export default function FinalCVPage() {
 
   // Load data from Firestore on mount for the logged-in user
   useEffect(() => {
-    if (currentUser && isLoadingData) { // Only load if user exists and data hasn't been loaded yet
+    if (currentUser && isLoadingData) { 
       const loadData = async () => {
         try {
           // Load CV Data
           const loadedCvData = await getCvData(currentUser.uid);
            const dataToSet = loadedCvData ? {
-                ...defaultCvData, // Ensure all base fields exist
+                ...defaultCvData, 
                 ...loadedCvData,
                 personalInfo: { ...defaultCvData.personalInfo, ...(loadedCvData.personalInfo || {}) },
                 experience: (loadedCvData.experience || []).map(exp => ({ ...exp, id: exp.id || crypto.randomUUID() })),
                 education: (loadedCvData.education || []).map(edu => ({ ...edu, id: edu.id || crypto.randomUUID() })),
                 skills: Array.isArray(loadedCvData.skills) ? loadedCvData.skills : [],
-                projects: Array.isArray(loadedCvData.projects) ? loadedCvData.projects : [],
-            } : defaultCvData; // Use default if no data found in Firestore
+                projects: (loadedCvData.projects || []).map(proj => ({ ...proj, id: proj.id || crypto.randomUUID() })),
+            } : defaultCvData; 
           setCvData(dataToSet);
 
           // Load User Profile
@@ -70,20 +70,19 @@ export default function FinalCVPage() {
             description: t('finalCvPage.errorLoadingDesc'),
             variant: "destructive",
           });
-           setCvData(defaultCvData); // Set to default on error
-           setUserProfile(null); // Set profile to null on error
+           setCvData(defaultCvData); 
+           setUserProfile(null); 
         } finally {
-          setIsLoadingData(false); // Mark data loading as complete
+          setIsLoadingData(false); 
         }
       };
       loadData();
     } else if (!currentUser && !authLoading) {
-        // Handle case where user logs out or was never logged in
         setCvData(defaultCvData);
         setUserProfile(null);
         setIsLoadingData(false);
     }
-  }, [currentUser, isLoadingData, toast, authLoading, t]); // Added authLoading and t
+  }, [currentUser, isLoadingData, toast, authLoading, t]); 
 
   const handlePrint = () => {
       if (typeof window !== 'undefined') {
@@ -92,7 +91,7 @@ export default function FinalCVPage() {
   };
 
   const handleBack = () => {
-    router.back();
+    router.push('/cv-editor'); // Explicitly go to editor page
   };
 
   const handleCopyCode = useCallback(async () => {
@@ -108,21 +107,18 @@ export default function FinalCVPage() {
   }, [userProfile, toast, t]);
 
 
-   // Show loading state while checking auth or fetching data
    if (authLoading || isLoadingData) {
      return (
         <div className="bg-secondary min-h-screen p-4 md:p-8">
            <div className="max-w-4xl mx-auto bg-background shadow-lg rounded-lg overflow-hidden">
-              {/* Skeleton Header */}
               <div className="p-4 flex justify-between items-center border-b">
-                 <Skeleton className="h-10 w-10" /> {/* Back button */}
+                 <Skeleton className="h-10 w-10" /> 
                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-8 w-20" /> {/* Code display */}
-                    <Skeleton className="h-8 w-24" /> {/* Language switcher */}
-                    <Skeleton className="h-10 w-32" /> {/* Print button */}
+                    <Skeleton className="h-8 w-20" /> 
+                    <Skeleton className="h-8 w-24" /> 
+                    <Skeleton className="h-10 w-32" /> 
                  </div>
               </div>
-               {/* Skeleton Preview */}
                <div className="p-6 md:p-8 space-y-6">
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                          <Skeleton className="h-24 w-24 rounded-full" />
@@ -132,26 +128,22 @@ export default function FinalCVPage() {
                              <Skeleton className="h-4 w-full" />
                          </div>
                     </div>
-                    <Skeleton className="h-20 w-full" /> {/* Summary */}
-                    <Skeleton className="h-16 w-full" /> {/* Skills */}
-                    <Skeleton className="h-24 w-full" /> {/* Projects */}
-                    <Skeleton className="h-32 w-full" /> {/* Education before Experience */}
-                    <Skeleton className="h-40 w-full" /> {/* Experience */}
+                    <Skeleton className="h-20 w-full" /> 
+                    <Skeleton className="h-16 w-full" /> 
+                    <Skeleton className="h-24 w-full" /> 
+                    <Skeleton className="h-32 w-full" /> 
+                    <Skeleton className="h-40 w-full" /> 
                </div>
            </div>
         </div>
      );
    }
 
-    // Ensure currentUser exists before rendering the main content
     if (!currentUser) {
-         // Should be redirected by the effect, but render this as fallback
         return <div className="flex justify-center items-center min-h-screen">{t('cvForge.redirectingLogin')}</div>;
     }
 
-   // Ensure cvData is loaded before rendering the preview
    if (!cvData) {
-        // This state might occur briefly or if loading fails without setting default
         return <div className="flex justify-center items-center min-h-screen">{t('finalCvPage.loadingCV')}</div>;
     }
 
@@ -179,11 +171,11 @@ export default function FinalCVPage() {
                 </Button>
             </div>
          </div>
-        {/* Wrap CVPreview in a div with specific ID for print styling */}
         <div id="cv-preview-container" className="print:p-0 print:m-0">
             <CVPreview 
               data={cvData} 
               showFinalButton={false} 
+              enableContentTranslation={true} // Enable content translation here
             />
         </div>
       </div>
