@@ -26,7 +26,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
-import type { Timestamp } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 
 
 const performLogout = async (authInstance: typeof auth, toastFn: ReturnType<typeof useToast>['toast'], tFn: ReturnType<typeof useTranslation>['t']) => {
@@ -103,23 +103,23 @@ export default function RecruiterSearchPage() {
               description: stableT('searchPage.mustBeRecruiter'),
               variant: 'destructive',
             });
-            stableRouterPush('/');
+            stableRouterPush('/cv-editor'); // Changed from '/' to '/cv-editor'
           }
         })
         .catch((error) => {
           console.error("[SearchPage useEffect] Error fetching user profile:", error);
           setIsRecruiter(false);
           stableToast({
-            title: stableT('cvForge.errorSaving'),
-            description: stableT('loginPage.signUpFailedDesc'),
+            title: stableT('cvForge.errorSaving'), // Potentially 'cvForge.errorLoadingDataError'
+            description: stableT('loginPage.signUpFailedDesc'), // Potentially 'cvForge.loadingDataErrorDesc'
             variant: 'destructive',
           });
-          stableRouterPush('/');
+          stableRouterPush('/cv-editor'); // Changed from '/' to '/cv-editor'
         })
         .finally(() => {
           console.log('[SearchPage useEffect] Profile check finished.');
           setProfileChecked(true);
-          // Do not set localLoading to false here if it was already true, let it be handled by the outer condition
+          setLocalLoading(false); // Ensure loading is false after profile check
         });
     } else {
       // If profile is checked and we are still in localLoading state (e.g. auth just finished)
@@ -129,7 +129,7 @@ export default function RecruiterSearchPage() {
           setLocalLoading(false);
       }
     }
-  }, [currentUser, authLoading, profileChecked, stableRouterPush, stableToast, stableT]);
+  }, [currentUser, authLoading, profileChecked, stableRouterPush, stableToast, stableT, localLoading]);
 
 
   const handleLogoutClick = useCallback(() => {
