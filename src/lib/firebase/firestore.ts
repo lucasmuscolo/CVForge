@@ -1,6 +1,6 @@
 
 // src/lib/firebase/firestore.ts
-import { doc, getDoc, setDoc, collection, query, where, getDocs, limit, type DocumentReference, type DocumentData } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, limit, type DocumentReference, type DocumentData, serverTimestamp, Timestamp, addDoc, orderBy } from 'firebase/firestore';
 import { db } from './config';
 import type { CvData } from '@/components/cv-forge/types';
 
@@ -12,7 +12,7 @@ export interface UserProfile {
 }
 
 // Function to save user profile data
-export const saveUserProfile = async (userId: string, profileData: UserProfile): Promise<void> => {
+export const saveUserProfile = async (userId: string, profileData: Partial<UserProfile>): Promise<void> => {
   if (!userId) throw new Error("User ID is required to save user profile.");
   const userDocRef: DocumentReference<DocumentData> = doc(db, 'users', userId);
   try {
@@ -39,27 +39,22 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
       const data = docSnap.data();
       console.log(`[getUserProfile] Raw data for ${userId}:`, JSON.stringify(data));
 
-      // Validate the structure of the fetched data
       if (data && typeof data.email === 'string' && (data.userType === 'creator' || data.userType === 'recruiter')) {
         if (data.userType === 'creator') {
-          // For creators, cvCode can be a string or undefined/null.
-          // If it exists, it must be a string.
           if (data.cvCode === undefined || data.cvCode === null || typeof data.cvCode === 'string') {
             console.log(`[getUserProfile] Valid creator profile for ${userId}. cvCode: ${data.cvCode}`);
             return data as UserProfile;
           } else {
             console.error(`[getUserProfile] Invalid cvCode type for creator ${userId}. Type: ${typeof data.cvCode}, Data:`, JSON.stringify(data));
-            return null; // Data integrity issue
+            return null;
           }
-        } else { // Recruiter
-          // Recruiters should not have cvCode, or if it's there (e.g. old data), it's ignored by the cast.
-          // The main check is that userType is 'recruiter'.
+        } else {
           console.log(`[getUserProfile] Valid recruiter profile for ${userId}.`);
           return data as UserProfile;
         }
       } else {
         console.error(`[getUserProfile] Invalid base data structure for user profile ${userId}. Data:`, JSON.stringify(data));
-        return null; // Data integrity issue
+        return null;
       }
     } else {
       console.log(`[getUserProfile] No profile document found for user: ${userId}`);
@@ -67,7 +62,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
     }
   } catch (error) {
     console.error(`[getUserProfile] Firebase error fetching profile for ${userId}:`, error);
-    throw error; // Re-throw to be caught by the caller, allowing specific error handling there
+    throw error;
   }
 };
 
@@ -125,4 +120,57 @@ export const saveCvData = async (userId: string, data: CvData): Promise<void> =>
      console.error("[saveCvData] Error saving CV data:", error);
      throw error;
    }
+};
+
+// --- Recruiter Search History ---
+export type SearchHistoryStatus = 'found' | 'cv_not_found' | 'user_not_found';
+
+export interface SearchHistoryEntryData {
+  searchedCvCode: string;
+  cvOwnerName?: string;
+  searchTimestamp: Timestamp; // Will be serverTimestamp on write
+  status: SearchHistoryStatus;
+}
+
+export interface SearchHistoryEntry extends SearchHistoryEntryData {
+  id: string;
+}
+
+export const addSearchHistoryEntry = async (recruiterId: string, entryData: Omit<SearchHistoryEntryData, 'searchTimestamp'>): Promise<void> => {
+  if (!recruiterId) throw new Error("Recruiter ID is required to save search history.");
+  const historyCollectionRef = collection(db, 'users', recruiterId, 'searchHistory');
+  try {
+    const dataToSave = {
+      ...entryData,
+      searchTimestamp: serverTimestamp(),
+    };
+    console.log(`[addSearchHistoryEntry] Saving history for recruiterId: ${recruiterId}, data:`, JSON.stringify(dataToSave));
+    await addDoc(historyCollectionRef, dataToSave);
+    console.log(`[addSearchHistoryEntry] History entry saved for recruiterId: ${recruiterId}`);
+  } catch (error) {
+    console.error("[addSearchHistoryEntry] Error saving search history entry:", error);
+    throw error;
+  }
+};
+
+export const getSearchHistory = async (recruiterId: string): Promise<SearchHistoryEntry[]> => {
+  if (!recruiterId) {
+    console.warn("[getSearchHistory] Called with no recruiterId.");
+    return [];
+  }
+  const historyCollectionRef = collection(db, 'users', recruiterId, 'searchHistory');
+  const q = query(historyCollectionRef, orderBy("searchTimestamp", "desc"), limit(50)); // Limit to 50 recent entries for now
+  try {
+    console.log(`[getSearchHistory] Fetching history for recruiterId: ${recruiterId}`);
+    const querySnapshot = await getDocs(q);
+    const historyEntries: SearchHistoryEntry[] = [];
+    querySnapshot.forEach((doc) => {
+      historyEntries.push({ id: doc.id, ...doc.data() } as SearchHistoryEntry);
+    });
+    console.log(`[getSearchHistory] Found ${historyEntries.length} history entries for recruiterId: ${recruiterId}`);
+    return historyEntries;
+  } catch (error) {
+    console.error(`[getSearchHistory] Firebase error fetching history for recruiterId: ${recruiterId}:`, error);
+    throw error;
+  }
 };
