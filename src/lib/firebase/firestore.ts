@@ -1,6 +1,6 @@
 
 // src/lib/firebase/firestore.ts
-import { doc, getDoc, setDoc, collection, query, where, getDocs, limit, type DocumentReference, type DocumentData, serverTimestamp, Timestamp, addDoc, orderBy } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, limit, type DocumentReference, type DocumentData, serverTimestamp, Timestamp, addDoc, orderBy, updateDoc } from 'firebase/firestore';
 import { db } from './config';
 import type { CvData } from '@/components/cv-forge/types';
 
@@ -139,16 +139,32 @@ export interface SearchHistoryEntry extends SearchHistoryEntryData {
 export const addSearchHistoryEntry = async (recruiterId: string, entryData: Omit<SearchHistoryEntryData, 'searchTimestamp'>): Promise<void> => {
   if (!recruiterId) throw new Error("Recruiter ID is required to save search history.");
   const historyCollectionRef = collection(db, 'users', recruiterId, 'searchHistory');
+  
   try {
-    const dataToSave = {
+    // Check if an entry with the same searchedCvCode already exists
+    const q = query(historyCollectionRef, where("searchedCvCode", "==", entryData.searchedCvCode), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    const dataToUpsert = {
       ...entryData,
-      searchTimestamp: serverTimestamp(),
+      searchTimestamp: serverTimestamp(), // Always update timestamp
     };
-    console.log(`[addSearchHistoryEntry] Saving history for recruiterId: ${recruiterId}, data:`, JSON.stringify(dataToSave));
-    await addDoc(historyCollectionRef, dataToSave);
-    console.log(`[addSearchHistoryEntry] History entry saved for recruiterId: ${recruiterId}`);
+
+    if (!querySnapshot.empty) {
+      // Entry exists, update it
+      const existingDoc = querySnapshot.docs[0];
+      const docRef = doc(db, 'users', recruiterId, 'searchHistory', existingDoc.id);
+      console.log(`[addSearchHistoryEntry] Updating existing history entry for recruiterId: ${recruiterId}, cvCode: ${entryData.searchedCvCode}`);
+      await updateDoc(docRef, dataToUpsert);
+      console.log(`[addSearchHistoryEntry] History entry updated for recruiterId: ${recruiterId}`);
+    } else {
+      // Entry does not exist, add a new one
+      console.log(`[addSearchHistoryEntry] Saving new history entry for recruiterId: ${recruiterId}, data:`, JSON.stringify(dataToUpsert));
+      await addDoc(historyCollectionRef, dataToUpsert);
+      console.log(`[addSearchHistoryEntry] New history entry saved for recruiterId: ${recruiterId}`);
+    }
   } catch (error) {
-    console.error("[addSearchHistoryEntry] Error saving search history entry:", error);
+    console.error("[addSearchHistoryEntry] Error saving/updating search history entry:", error);
     throw error;
   }
 };
