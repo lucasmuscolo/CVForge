@@ -18,10 +18,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; // Added CardDescription
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cvDataToMarkdown } from '@/lib/utils';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription as DialogModalDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'; // Renamed DialogDescription to avoid conflict
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
@@ -121,12 +121,12 @@ export default function RecruiterSearchPage() {
           setLocalLoading(false);
         });
     } else {
-       if (localLoading) {
-          console.log('[SearchPage useEffect] Profile checked, but localLoading still true. Setting to false.');
+       if (localLoading && !authLoading) { // Ensure authLoading is also false here
+          console.log('[SearchPage useEffect] Profile checked, but localLoading still true and auth not loading. Setting to false.');
           setLocalLoading(false);
       }
     }
-  }, [currentUser, authLoading, profileChecked, stableRouterPush, t, toast, localLoading]);
+  }, [currentUser, authLoading, profileChecked, stableRouterPush, t, toast]); // localLoading removed from deps
 
 
   const handleLogoutClick = useCallback(() => {
@@ -182,19 +182,22 @@ export default function RecruiterSearchPage() {
       setSearchedCvData(null);
       setSearchMessage(t('cvForge.searchErrorDesc'));
       toast({ title: t('cvForge.searchFailedTitle'), description: t('cvForge.searchErrorDesc'), variant: 'destructive' });
-      searchStatus = 'user_not_found';
+      searchStatus = 'user_not_found'; // Or a new 'error' status if needed
     } finally {
       setIsSearching(false);
-      const historyEntry: Omit<SearchHistoryEntryData, 'searchTimestamp'> = {
-        searchedCvCode: codeToSearch,
-        cvOwnerName: ownerName,
-        status: searchStatus,
-      };
-      try {
-        await addSearchHistoryEntry(currentUser.uid, historyEntry);
-        console.log("Search history entry added/updated.");
-      } catch (historyError) {
-        console.error("Failed to save/update search history:", historyError);
+      // Save to history only if a search was attempted by a logged-in, verified recruiter
+      if (currentUser && isEmailVerified && codeToSearch) {
+        const historyEntry: Omit<SearchHistoryEntryData, 'searchTimestamp'> = {
+          searchedCvCode: codeToSearch,
+          cvOwnerName: ownerName,
+          status: searchStatus,
+        };
+        try {
+          await addSearchHistoryEntry(currentUser.uid, historyEntry);
+          console.log("Search history entry added/updated.");
+        } catch (historyError) {
+          console.error("Failed to save/update search history:", historyError);
+        }
       }
     }
   }, [currentUser, isEmailVerified, t, toast]);
@@ -258,7 +261,7 @@ export default function RecruiterSearchPage() {
 
   const handleViewHistoryClick = () => {
     setIsHistoryModalOpen(true);
-    if (!searchHistory) {
+    if (!searchHistory || searchHistory.length === 0) { // Fetch if no history or empty
         fetchHistory();
     }
   };
@@ -277,8 +280,10 @@ export default function RecruiterSearchPage() {
     );
   }
 
-  if (!isRecruiter) {
+  if (!isRecruiter && profileChecked) { // Ensure profile has been checked before denying access
     console.log('[SearchPage render] Not a recruiter or profile not confirmed as recruiter, rendering access denied.');
+    // This case should ideally be handled by redirection in useEffect,
+    // but this return acts as a failsafe.
     return <div className="flex justify-center items-center min-h-screen">{t('searchPage.accessDenied')}</div>;
   }
 
@@ -299,7 +304,7 @@ export default function RecruiterSearchPage() {
               <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>{t('searchPage.historyModalTitle')}</DialogTitle>
-                  <DialogDescription>{t('searchPage.historyModalDescription')}</DialogDescription>
+                  <DialogModalDescription>{t('searchPage.historyModalDescription')}</DialogModalDescription>
                 </DialogHeader>
                 {isHistoryLoading ? (
                   <div className="flex justify-center items-center h-40">
@@ -409,6 +414,7 @@ export default function RecruiterSearchPage() {
 
         {!isSearching && searchedCvData === undefined && !searchMessage && isEmailVerified && (
              <div className="text-center py-10 text-muted-foreground">
+                {/* This space can be used for an initial prompt if desired, or left blank */}
              </div>
         )}
 
