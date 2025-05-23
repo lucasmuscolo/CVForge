@@ -13,12 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LogOut, Search, Loader2, AlertTriangle, Download, Printer, History as HistoryIcon } from 'lucide-react';
 import { auth } from '@/lib/firebase/config';
-import { signOut, type User } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cvDataToMarkdown } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -29,10 +29,11 @@ import { es, enUS } from 'date-fns/locale';
 import { Timestamp } from 'firebase/firestore';
 
 
-const performLogout = async (authInstance: typeof auth, toastFn: ReturnType<typeof useToast>['toast'], tFn: ReturnType<typeof useTranslation>['t']) => {
+const performLogout = async (authInstance: typeof auth, toastFn: ReturnType<typeof useToast>['toast'], tFn: ReturnType<typeof useTranslation>['t'], routerFn: ReturnType<typeof useRouter>) => {
   try {
     await signOut(authInstance);
     toastFn({ title: tFn('loginPage.loggedOut'), description: tFn('loginPage.loggedOutDesc') });
+    routerFn.push('/login');
   } catch (error) {
     console.error('Logout failed:', error);
     toastFn({
@@ -64,8 +65,6 @@ export default function RecruiterSearchPage() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   const stableRouterPush = useCallback((path: string) => router.push(path), [router]);
-  const stableToast = useCallback(toast, []);
-  const stableT = useCallback(t, [t]);
 
 
   useEffect(() => {
@@ -80,7 +79,7 @@ export default function RecruiterSearchPage() {
     if (!currentUser) {
       console.log('[SearchPage useEffect] No current user, redirecting to login.');
       stableRouterPush('/login');
-      setLocalLoading(false);
+      setLocalLoading(false); // Ensure loading is false if we redirect
       return;
     }
 
@@ -98,52 +97,52 @@ export default function RecruiterSearchPage() {
           } else {
             console.log('[SearchPage useEffect] User is not recruiter or profile not found. Redirecting.');
             setIsRecruiter(false);
-            stableToast({
-              title: stableT('searchPage.accessDenied'),
-              description: stableT('searchPage.mustBeRecruiter'),
+            toast({
+              title: t('searchPage.accessDenied'),
+              description: t('searchPage.mustBeRecruiter'),
               variant: 'destructive',
             });
-            stableRouterPush('/cv-editor'); // Changed from '/' to '/cv-editor'
+            stableRouterPush('/cv-editor');
           }
         })
         .catch((error) => {
           console.error("[SearchPage useEffect] Error fetching user profile:", error);
           setIsRecruiter(false);
-          stableToast({
-            title: stableT('cvForge.errorSaving'), // Potentially 'cvForge.errorLoadingDataError'
-            description: stableT('loginPage.signUpFailedDesc'), // Potentially 'cvForge.loadingDataErrorDesc'
+          toast({
+            title: t('cvForge.errorLoadingDataError'),
+            description: t('cvForge.loadingDataErrorDesc'),
             variant: 'destructive',
           });
-          stableRouterPush('/cv-editor'); // Changed from '/' to '/cv-editor'
+          stableRouterPush('/cv-editor');
         })
         .finally(() => {
           console.log('[SearchPage useEffect] Profile check finished.');
           setProfileChecked(true);
-          setLocalLoading(false); // Ensure loading is false after profile check
+          setLocalLoading(false);
         });
     } else {
-      // If profile is checked and we are still in localLoading state (e.g. auth just finished)
-      // then we can set localLoading to false.
-      if (localLoading) {
+       if (localLoading) {
           console.log('[SearchPage useEffect] Profile checked, but localLoading still true. Setting to false.');
           setLocalLoading(false);
       }
     }
-  }, [currentUser, authLoading, profileChecked, stableRouterPush, stableToast, stableT, localLoading]);
+  }, [currentUser, authLoading, profileChecked, stableRouterPush, t, toast, localLoading]);
 
 
   const handleLogoutClick = useCallback(() => {
-    performLogout(auth, toast, t);
-    router.push('/login');
+    performLogout(auth, toast, t, router);
   }, [toast, t, router]);
 
-  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+
+  const performActualSearch = useCallback(async (codeToSearch: string) => {
+    if (!currentUser) {
+        toast({ title: t('cvForge.notLoggedIn'), description: t('cvForge.notLoggedInDesc'), variant: "destructive" });
+        return;
+    }
     if (!isEmailVerified) {
         toast({ title: t('searchPage.emailNotVerifiedAlertTitle'), description: t('searchPage.verifyToSearch'), variant: "destructive" });
         return;
     }
-    const codeToSearch = searchCvCode.trim();
     if (!codeToSearch) {
       setSearchMessage(t('searchPage.enterCvCodePrompt'));
       setSearchedCvData(undefined);
@@ -183,25 +182,34 @@ export default function RecruiterSearchPage() {
       setSearchedCvData(null);
       setSearchMessage(t('cvForge.searchErrorDesc'));
       toast({ title: t('cvForge.searchFailedTitle'), description: t('cvForge.searchErrorDesc'), variant: 'destructive' });
-      searchStatus = 'user_not_found'; // Or a generic error status
+      searchStatus = 'user_not_found';
     } finally {
       setIsSearching(false);
-      if (currentUser) {
-        const historyEntry: Omit<SearchHistoryEntryData, 'searchTimestamp'> = {
-          searchedCvCode: codeToSearch,
-          cvOwnerName: ownerName,
-          status: searchStatus,
-        };
-        try {
-          await addSearchHistoryEntry(currentUser.uid, historyEntry);
-          console.log("Search history entry added.");
-        } catch (historyError) {
-          console.error("Failed to save search history:", historyError);
-          // Optionally, toast a silent error or just log it
-        }
+      const historyEntry: Omit<SearchHistoryEntryData, 'searchTimestamp'> = {
+        searchedCvCode: codeToSearch,
+        cvOwnerName: ownerName,
+        status: searchStatus,
+      };
+      try {
+        await addSearchHistoryEntry(currentUser.uid, historyEntry);
+        console.log("Search history entry added/updated.");
+      } catch (historyError) {
+        console.error("Failed to save/update search history:", historyError);
       }
     }
-  };
+  }, [currentUser, isEmailVerified, t, toast]);
+
+  const handleSearchFormSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await performActualSearch(searchCvCode.trim());
+  }, [performActualSearch, searchCvCode]);
+
+  const handleHistoryCodeClick = useCallback(async (code: string) => {
+    setSearchCvCode(code);
+    setIsHistoryModalOpen(false);
+    await performActualSearch(code);
+  }, [performActualSearch]);
+
 
   const handleDownloadMarkdown = () => {
     if (!searchedCvData) {
@@ -233,7 +241,7 @@ export default function RecruiterSearchPage() {
       }
   };
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     if (!currentUser || !isRecruiter) return;
     setIsHistoryLoading(true);
     try {
@@ -242,15 +250,15 @@ export default function RecruiterSearchPage() {
     } catch (error) {
       console.error("Failed to fetch search history:", error);
       toast({ title: t('searchPage.historyFetchErrorTitle'), description: t('searchPage.historyFetchErrorDesc'), variant: "destructive" });
-      setSearchHistory([]); // Set to empty array on error
+      setSearchHistory([]);
     } finally {
       setIsHistoryLoading(false);
     }
-  };
+  }, [currentUser, isRecruiter, toast, t]);
 
   const handleViewHistoryClick = () => {
     setIsHistoryModalOpen(true);
-    if (!searchHistory) { // Fetch only if not already fetched or on explicit demand
+    if (!searchHistory) {
         fetchHistory();
     }
   };
@@ -288,7 +296,7 @@ export default function RecruiterSearchPage() {
                   <HistoryIcon className="mr-2 h-4 w-4" /> {t('searchPage.viewHistoryButton')}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl"> {/* Increased width for better table display */}
+              <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>{t('searchPage.historyModalTitle')}</DialogTitle>
                   <DialogDescription>{t('searchPage.historyModalDescription')}</DialogDescription>
@@ -305,20 +313,26 @@ export default function RecruiterSearchPage() {
                           <TableHead>{t('searchPage.historyTableCvCode')}</TableHead>
                           <TableHead>{t('searchPage.historyTableCvOwner')}</TableHead>
                           <TableHead>{t('searchPage.historyTableDate')}</TableHead>
-                          <TableHead>{t('searchPage.historyTableStatus')}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {searchHistory.map((entry) => (
                           <TableRow key={entry.id}>
-                            <TableCell className="font-mono text-xs">{entry.searchedCvCode}</TableCell>
+                            <TableCell>
+                               <Button
+                                variant="link"
+                                className="p-0 h-auto font-mono text-xs text-primary hover:underline"
+                                onClick={() => handleHistoryCodeClick(entry.searchedCvCode)}
+                              >
+                                {entry.searchedCvCode}
+                              </Button>
+                            </TableCell>
                             <TableCell>{entry.cvOwnerName || t('searchPage.historyNotApplicable')}</TableCell>
                             <TableCell className="text-xs">
                               {entry.searchTimestamp && entry.searchTimestamp instanceof Timestamp
                                 ? format(entry.searchTimestamp.toDate(), 'PPpp', { locale: currentLocale === 'es' ? es : enUS })
                                 : t('searchPage.historyInvalidDate')}
                             </TableCell>
-                            <TableCell className="text-xs">{t(`searchPage.historyStatus_${entry.status}`)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -356,7 +370,7 @@ export default function RecruiterSearchPage() {
             <CardDescription>{t('searchPage.searchCVsDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-end gap-4">
+            <form onSubmit={handleSearchFormSubmit} className="flex flex-col sm:flex-row items-end gap-4">
               <div className="w-full sm:flex-grow">
                 <Label htmlFor="search-cv-code" className="mb-1 block">{t('searchPage.searchByCvCodeLabel')}</Label>
                 <Input
@@ -428,3 +442,4 @@ export default function RecruiterSearchPage() {
     </div>
   );
 }
+

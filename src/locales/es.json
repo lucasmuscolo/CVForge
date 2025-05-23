@@ -234,10 +234,6 @@
     "historyTableCvCode": "Código CV",
     "historyTableCvOwner": "Propietario CV",
     "historyTableDate": "Fecha Búsqueda",
-    "historyTableStatus": "Estado",
-    "historyStatus_found": "Encontrado",
-    "historyStatus_cv_not_found": "CV No Encontrado",
-    "historyStatus_user_not_found": "Usuario No Encontrado",
     "historyNotApplicable": "N/A",
     "historyInvalidDate": "Fecha Inválida",
     "noHistoryFound": "No se encontró historial de búsqueda.",
@@ -276,3 +272,4 @@
     "footerRights": "Todos los derechos reservados."
   }
 }
+
